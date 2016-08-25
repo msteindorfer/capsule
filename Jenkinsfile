@@ -1,17 +1,10 @@
 node {
   def mvnHome = tool 'M3'
-  env.JAVA_HOME="${tool 'jdk-oracle-8'}"
+  env.JAVA_HOME="${tool 'jdk-oracle-7'}"
   env.PATH="${env.JAVA_HOME}/bin:${mvnHome}/bin:${env.PATH}"
 
   stage 'Clone'
   checkout scm
-
-  // stage 'Build, Test and Deploy'
-  // wrap([$class: 'ConfigFileBuildWrapper', managedFiles: [[fileId: 'org.jenkinsci.plugins.configfiles.maven.MavenSettingsConfig:usethesource-maven-settings', variable: 'SETTINGS_PATH']]]) {
-  //   def mvnHome = tool 'M3'
-  //   sh "${mvnHome}/bin/mvn -s ${env.SETTINGS_PATH} -Dmaven.repo.local=/var/jenkins_home/repo -B clean install deploy"
-  // }
-  // sh "${mvnHome}/bin/mvn -s /var/jenkins_home/usethesource-maven-settings.xml -Dmaven.repo.local=/var/jenkins_home/repo -B clean install deploy"
 
   stage 'Build and Test'
   sh "mvn -B clean install"
