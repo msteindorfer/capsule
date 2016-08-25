@@ -22,6 +22,6 @@ Furthermore, you have to declare capsule as a dependency. To obtain the latest v
 <dependency>
 	<groupId>io.usethesource</groupId>
 	<artifactId>capsule-jdk7</artifactId>
-	<version>0.3.0-SNAPSHOT</version>
+	<version>0.2.1</version>
 </dependency>
 ```
