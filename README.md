@@ -1,4 +1,4 @@
-# The Capsule Hash Trie Collections Library
+# The Capsule Hash Trie Collections Library (Temporary JDK7 Fork)
 
 This is a JDK7 compatible backport of the [usethesource/capsule](https://github.com/usethesource/capsule). Please refer to the main project for up-to-date documentation, issues, etcetera.
 
