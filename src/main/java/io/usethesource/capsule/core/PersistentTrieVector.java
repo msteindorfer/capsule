@@ -227,6 +227,12 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   @Override
   public Vector.Immutable<K> concatenate(Vector.Immutable<K> other) {
+//    if (this.size() == 0) return other;
+//    if (other.size() == 0) return this;
+//
+//    if (this.size() == 1) return other.pushFront(this.get(0).get());
+//    if (other.size() == 1) return this.pushBack(other.get(0).get());
+
     if (other instanceof PersistentTrieVector) {
       final PersistentTrieVector<K> that = (PersistentTrieVector<K>) other;
 
