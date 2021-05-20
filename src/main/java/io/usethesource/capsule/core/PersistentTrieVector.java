@@ -232,7 +232,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
       final Path pathL = this.root.accept(
           new PathVisitor(() -> new Path(this.shift)),
-          Arguments.of(this.length - 1, this.length - 1, this.shift));
+          Arguments.of(this.length == 0 ? 0 : this.length - 1, this.length == 0 ? 0 : this.length - 1, this.shift));
 
       final Path pathR = that.root.accept(
           new PathVisitor(() -> new Path(that.shift)),

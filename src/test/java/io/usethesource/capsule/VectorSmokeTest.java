@@ -116,4 +116,14 @@ public class VectorSmokeTest {
     return dst;
   }
 
+  @Test
+  public void testConcatenateEmptyWithNonEmpty() {
+    io.usethesource.capsule.Vector.Immutable<Integer> vectorOne = PersistentTrieVector.of();
+    io.usethesource.capsule.Vector.Immutable<Integer> vectorTwo = PersistentTrieVector.of(1);
+
+    io.usethesource.capsule.Vector.Immutable<Integer> concat = vectorOne.concatenate(vectorTwo);
+
+    assert concat.size() == vectorTwo.size();
+  }
+
 }

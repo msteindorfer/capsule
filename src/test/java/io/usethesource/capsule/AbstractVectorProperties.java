@@ -84,8 +84,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
   @Property(trials = MORE_TRIALS)
   public void containsAfterConcatenate(
-      @Size(min = 1, max = MAX_SIZE) final CT vectorOne,
-      @Size(min = 1, max = MAX_SIZE) final CT vectorTwo) {
+      @Size(min = 0, max = MAX_SIZE) final CT vectorOne,
+      @Size(min = 0, max = MAX_SIZE) final CT vectorTwo) {
 
     final CT result = (CT) vectorOne.concatenate(vectorTwo);
     assert result.size() == vectorOne.size() + vectorTwo.size();
