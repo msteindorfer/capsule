@@ -4,5 +4,6 @@ io.usethesource.capsule.generators.multimap.SetMultimapGenerator
 io.usethesource.capsule.generators.relation.BidirectionalTrieSetMultimapGenerator
 io.usethesource.capsule.generators.set.SetGeneratorDefault
 io.usethesource.capsule.generators.set.SpecializedSetGenerator
+io.usethesource.capsule.generators.vector.VectorGeneratorDefault
 io.usethesource.capsule.generators.CollidableIntegerGenerator
 io.usethesource.capsule.generators.MapEntryGenerator
