@@ -7,17 +7,19 @@
  */
 package io.usethesource.capsule;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.pholser.junit.quickcheck.Property;
+import com.pholser.junit.quickcheck.generator.Size;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import com.pholser.junit.quickcheck.Property;
-import com.pholser.junit.quickcheck.generator.Size;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /*
  * NOTE: use e.g. @When(seed = 3666151076704776907L) to fix seed for reproducing test run.
@@ -107,6 +109,46 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
         });
 
     assertTrue("Must contain all newly inserted values.", containsVectorTwo);
+  }
+
+  @Property(trials = MORE_TRIALS)
+  public void splitShuffleConcatenateRepeat(@Size(min = 0, max = MAX_SIZE) final CT inputVector) {
+    int repetitions = 10;
+    int approximateSegments = 4;
+
+    CT resultVector = inputVector;
+
+    for (int r = 0; r < repetitions; r++) {
+      int randUpperBound = resultVector.size() / approximateSegments;
+      Random rand = new Random();
+
+      List<CT> segments = new ArrayList<>();
+
+      CT remainderVector = resultVector;
+      while (remainderVector.size() > 0) {
+        int nextUpperBound = rand.nextInt(randUpperBound + 1);
+
+        CT nextVector = (CT) remainderVector.take(nextUpperBound);
+        segments.add(nextVector);
+
+        remainderVector = (CT) remainderVector.drop(nextUpperBound);
+      }
+
+      Collections.shuffle(segments);
+      resultVector = segments.stream().reduce((a, b) -> (CT) a.concatenate(b)).get();
+    }
+
+    assertEquals(inputVector.size(), resultVector.size());
+
+    List<Integer> inputListSorted = new ArrayList<>();
+    for (int i = 0; i < inputVector.size(); i++) inputListSorted.add((Integer) inputVector.get(i).get());
+    Collections.sort(inputListSorted);
+
+    List<Integer> resultListSorted = new ArrayList<>();
+    for (int i = 0; i < inputVector.size(); i++) resultListSorted.add((Integer) resultVector.get(i).get());
+    Collections.sort(resultListSorted);
+
+    assertEquals(inputListSorted, resultListSorted);
   }
 
   @Property(trials = DEFAULT_TRIALS)
