@@ -114,7 +114,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
   }
 
   @Property(trials = MORE_TRIALS)
-  public void splitShuffleConcatenateRepeat(@Size(min = 0, max = MAX_SIZE) final CT inputVector) {
+  public void splitShuffleConcatenateRepeat(@Size(min = 4, max = MAX_SIZE) final CT inputVector) {
     int repetitions = 10;
     int approximateSegments = 4;
 
