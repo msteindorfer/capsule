@@ -298,8 +298,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 //        return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, EMPTY_FRINGED_NODE);
       } else {
         nodeM = mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(), nodeR.first());
-
-        // assert merged.size() == nodeL.last().size() + nodeR.last().size();
+        assert nodeM.size() == nodeL.last().size() + nodeR.last().size();
 
         return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, nodeR.tail(shift));
       }
