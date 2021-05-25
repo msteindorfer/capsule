@@ -26,17 +26,19 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>> {
 
-  private final int DEFAULT_TRIALS = 1_000;
-  private final int MORE_TRIALS = 1_000;
+  @SuppressWarnings("unused")
   private final int LESS_TRIALS = 100;
-  private final int MAX_SIZE = 50_000;
+  private final int BASE_TRIALS = 1_000;
+  private final int MORE_TRIALS = 10_000;
+
+  private final int MAX_SIZE = 50_000; // selected to be larger than three trie levels (i.e., 32 * 32 * 32)
   private final Class<?> type;
 
   public AbstractVectorProperties(Class<?> type) {
     this.type = type;
   }
 
-  @Property(trials = DEFAULT_TRIALS)
+  @Property(trials = BASE_TRIALS)
   public void containsAfterPushFront(@Size(min = 1, max = MAX_SIZE) final CT initialVector,
                                      @Size(min = 1, max = MAX_SIZE) final ArrayList<T> inputValues) {
 
@@ -60,7 +62,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all inserted values.", containsInsertedValues);
   }
 
-  @Property(trials = DEFAULT_TRIALS)
+  @Property(trials = BASE_TRIALS)
   public void containsAfterPushBack(@Size(min = 1, max = MAX_SIZE) final CT initialVector,
       @Size(min = 1, max = MAX_SIZE) final ArrayList<T> inputValues) {
 
@@ -151,7 +153,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertEquals(inputListSorted, resultListSorted);
   }
 
-  @Property(trials = DEFAULT_TRIALS)
+  @Property(trials = BASE_TRIALS)
   public void insertAt(final CT vector, final int seed, final T newItem) {
 
     final int index = new Random(seed).nextInt(vector.size() + 1);
@@ -180,7 +182,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all inserted values.", containsValuesAfterIndex);
   }
 
-  @Property(trials = DEFAULT_TRIALS)
+  @Property(trials = BASE_TRIALS)
   public void take(final CT vector, final int seed) {
 
     final int count = new Random(seed).nextInt(vector.size() + 1);
@@ -198,7 +200,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all inserted values.", containsInsertedValues);
   }
 
-  @Property(trials = DEFAULT_TRIALS)
+  @Property(trials = BASE_TRIALS)
   public void drop(final CT vector, final int seed) {
 
     final int count = new Random(seed).nextInt(vector.size() + 1);
@@ -216,7 +218,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all inserted values.", containsInsertedValues);
   }
 
-  @Property(trials = DEFAULT_TRIALS)
+  @Property(trials = BASE_TRIALS)
   public void update(@Size(min = 1, max = MAX_SIZE) final CT vector, final int seed,
       final T updatedItem) {
 
