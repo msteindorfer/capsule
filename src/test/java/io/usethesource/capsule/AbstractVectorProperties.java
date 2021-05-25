@@ -236,6 +236,6 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
           return Objects.equals(a, b);
         });
 
-    assertTrue("Eleemnts at indices (excepted the updated) must equal.", unmodifiedItemsEqual);
+    assertTrue("Elements must be equal, except at the updated cell.", unmodifiedItemsEqual);
   }
 }
