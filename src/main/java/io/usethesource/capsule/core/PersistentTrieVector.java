@@ -298,7 +298,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 //        return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, EMPTY_FRINGED_NODE);
       } else {
         nodeM = mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(), nodeR.first());
-        assert nodeM.size() == nodeL.last().size() + nodeR.last().size();
+        assert nodeM.size() == nodeL.last().size() + nodeR.first().size();
 
         return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, nodeR.tail(shift));
       }
@@ -376,6 +376,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     int segmentCountLevel0 = segmentCount(items.length);
 
     VectorNode<?> possibleResult = Stream.of(items).collect(toVectorNodeLeaf());
+    assert possibleResult.size() == (nodeL.size() + nodeM.size() + nodeR.size());
 
     return (VectorNode<K>) possibleResult;
   }
@@ -1054,6 +1055,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       this.sizesSummed = sizesSummed;
 
       // TODO: define invariants with asserts
+      assert size() == Stream.of(content).mapToInt(VectorNode::size).sum();
     }
 
     /*
