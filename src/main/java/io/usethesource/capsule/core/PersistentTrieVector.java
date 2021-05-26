@@ -1567,4 +1567,34 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   }
 
+  @Override
+  public boolean equals(final Object other) {
+    if (other instanceof PersistentTrieVector) {
+      final PersistentTrieVector<K> that = (PersistentTrieVector<K>) other;
+
+      if (length != that.length) {
+        return false;
+      }
+
+      for (int i = 0; i < length; i++) {
+        if (!get(i).equals(that.get(i))) {
+          return false;
+        }
+      }
+
+      return true;
+    } else {
+      throw new UnsupportedOperationException("Not yet implemented.");
+    }
+  }
+
+//  @Override
+//  public int hashCode() {
+//    throw new UnsupportedOperationException("Not yet implemented.");
+//  }
+//
+//  @Override
+//  public String toString() {
+//    throw new UnsupportedOperationException("Not yet implemented.");
+//  }
 }

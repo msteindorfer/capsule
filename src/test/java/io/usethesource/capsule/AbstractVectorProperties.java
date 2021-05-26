@@ -86,6 +86,28 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all inserted values.", containsInsertedValues);
   }
 
+  @Property(trials = BASE_TRIALS)
+  public void concatenateOneEqualsPushFront(@Size(min = 0, max = MAX_SIZE) final CT initialVector,
+                                            @Size(min = 1, max = 1) final CT singleton) {
+    Vector.Immutable<T> resultConcatenate = singleton.concatenate(initialVector);
+    Vector.Immutable<T> resultPush = initialVector.pushFront(singleton.get(0).get()); // TODO consider adding `first()`
+
+    assertEquals(
+        resultConcatenate,
+        resultPush);
+  }
+
+  @Property(trials = BASE_TRIALS)
+  public void concatenateOneEqualsPushBack(@Size(min = 0, max = MAX_SIZE) final CT initialVector,
+                                           @Size(min = 1, max = 1) final CT singleton) {
+    Vector.Immutable<T> resultConcatenate = initialVector.concatenate(singleton);
+    Vector.Immutable<T> resultPush = initialVector.pushBack(singleton.get(0).get());  // TODO consider adding `first()`
+
+    assertEquals(
+        resultConcatenate,
+        resultPush);
+  }
+
   @Property(trials = MORE_TRIALS)
   public void containsAfterConcatenate(
       @Size(min = 0, max = MAX_SIZE) final CT vectorOne,
