@@ -1586,9 +1586,23 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 //  public int hashCode() {
 //    throw new UnsupportedOperationException("Not yet implemented.");
 //  }
-//
-//  @Override
-//  public String toString() {
-//    throw new UnsupportedOperationException("Not yet implemented.");
-//  }
+
+  @Override
+  public String toString() {
+    if (length == 0) {
+      return "[]";
+    }
+
+    StringBuffer sb = new StringBuffer();
+    sb.append("[");
+
+    sb.append(get(0).get());
+    for (int i = 1; i < length; i++) {
+      sb.append(", ");
+      sb.append(get(i).get());
+    }
+
+    sb.append("]");
+    return sb.toString();
+  }
 }
