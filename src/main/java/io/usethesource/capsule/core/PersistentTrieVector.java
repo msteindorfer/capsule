@@ -272,14 +272,9 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     if (shift == 0) {
       return mergeLeaves(nodeL, nodeR);
     } else {
-      final VectorNode<K> nodeM;
-
       if (shift == 5) {
-//        merged = mergeLeaves(nodeL.last(), nodeR.first());
-//
-//        return mergeAndRebalanceLastTwoLevels(nodeL.init(shift), merged, nodeR.tail(shift));
-
-        nodeM = mergeLeaves(nodeL.last(), nodeR.first());
+//        final VectorNode<K> nodeM = mergeLeaves(nodeL.last(), nodeR.first());
+//        return mergeAndRebalanceLastTwoLevels(nodeL.init(shift), nodeM, nodeR.tail(shift));
 
         return mergeAndRebalanceLastTwoLevels(nodeL, EMPTY_FRINGED_NODE, nodeR);
 //      } else if (shift == 10) {
@@ -297,12 +292,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 //
 //        return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, EMPTY_FRINGED_NODE);
       } else {
-        nodeM = mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(), nodeR.first());
+        final VectorNode<K> nodeM = mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(), nodeR.first());
         assert nodeM.size() == nodeL.last().size() + nodeR.first().size();
 
         return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, nodeR.tail(shift));
       }
-
     }
   }
 
