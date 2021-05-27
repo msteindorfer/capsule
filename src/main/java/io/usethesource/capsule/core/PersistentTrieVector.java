@@ -21,8 +21,10 @@ import static io.usethesource.capsule.util.BitmapUtils.bitpos;
 import static io.usethesource.capsule.util.BitmapUtils.index;
 import static io.usethesource.capsule.util.BitmapUtils.mask;
 import static io.usethesource.capsule.util.FunctionUtils.asInstanceOf;
+import static io.usethesource.capsule.util.FunctionUtils.isInstanceOf;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -104,7 +106,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
    */
   @Override
   public Vector.Immutable<K> pushFront(K item) {
-//    return PersistentTrieVector.of(item).concatenate(this);
+    // stress test concatenate
+    if (true) return PersistentTrieVector.of(item).concatenate(this);
 
     final int newShift = root.hasFullFront() ? shift + BIT_PARTITION_SIZE : shift;
     final int newLength = length + 1;
@@ -131,7 +134,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
    */
   @Override
   public Vector.Immutable<K> pushBack(K item) {
-//    return this.concatenate(PersistentTrieVector.of(item));
+    // stress test concatenate
+    if (true) return this.concatenate(PersistentTrieVector.of(item));
 
     final int newShift = root.hasFullBack() ? shift + BIT_PARTITION_SIZE : shift;
     final int newLength = length + 1;
@@ -300,7 +304,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     }
   }
 
-  private VectorNode<K> mergeLeaves(VectorNode<K> nodeL, VectorNode<K> nodeR) {
+  private static <K> VectorNode<K> mergeLeaves(VectorNode<K> nodeL, VectorNode<K> nodeR) {
     final ContentVectorNode<K> leafL = (ContentVectorNode<K>) nodeL;
     final ContentVectorNode<K> leafR = (ContentVectorNode<K>) nodeR;
 
@@ -361,6 +365,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
     int segmentCountLevel1 = segmentCount(merged.length);
 
+    // TODO: rework implementation; it's currently flawed since it rewrites (at least) all the leaf nodes and re-aligns
+    // them (i.e., left-aligned, right-ragged).
     Object[] items =
         Stream.of(merged)
             .map(asInstanceOf(ContentVectorNode.class))
@@ -509,24 +515,24 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
           leafFringeL += item.sizeFringeL();
           break;
         }
-        case 01: {
-          /* NOTE: does not work b/c of ContentNode not committing to left or right balancing. */
-
-//          // assert previousLeaf().hasRegularBack();
-//          assert item.hasRegularFront();
-
-          leafBuffer.add(item);
-          leafFringeL += item.sizeFringeL();
-          break;
-        }
-        case 31: {
-//          assert item.hasRegularFront();
-//          // assert item.hasRegularBack();
-
-          leafBuffer.add(item);
-          leafFringeR += item.sizeFringeR();
-          break;
-        }
+//        case 01: {
+//          /* NOTE: does not work b/c of ContentNode not committing to left or right balancing. */
+//
+////          // assert previousLeaf().hasRegularBack();
+////          assert item.hasRegularFront();
+//
+//          leafBuffer.add(item);
+//          leafFringeL += item.sizeFringeL();
+//          break;
+//        }
+//        case 31: {
+////          assert item.hasRegularFront();
+////          // assert item.hasRegularBack();
+//
+//          leafBuffer.add(item);
+//          leafFringeR += item.sizeFringeR();
+//          break;
+//        }
         case 32: {
           final VectorNode[] leafContent = leafBuffer.toArray(new VectorNode[leafBuffer.size()]);
 
@@ -563,8 +569,23 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 //          assert previousLeaf().hasRegularBack();
 //          assert item.hasRegularFront();
 
-          // add to level 0
-          leafBuffer.add(item);
+          assert !leafBuffer.isEmpty();
+          int lastIndex = leafBuffer.size() - 1;
+
+          if (leafBuffer.get(lastIndex).size() + item.size() <= 32) {
+            // merge adjacent leaf nodes if their sizes underflow
+            // NOTE: this doesn't seem to fix issues when imbalances appear higher up in the tree
+
+            // TODO consider more general underflow metrics, based on fill factor, e.g.,:
+            // `(1. * leafBuffer.stream().mapToInt(VectorNode::size).sum()) / (32. * leafBuffer.size())`
+
+            // update at level 0
+            VectorNode<K> mergedLeaves = ((FringedVectorNode<K>) mergeLeaves(leafBuffer.get(lastIndex), item)).content[0]; // TODO replace / rework `mergeLeaves`
+            leafBuffer.set(lastIndex, mergedLeaves);
+          } else {
+            // add to level 0
+            leafBuffer.add(item);
+          }
         }
       }
 
@@ -618,6 +639,10 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
         final VectorNode<K> lastLeaf = calculateSizes(shiftBaseline + 0 * BIT_PARTITION_SIZE, leafContent);
 
         treeBuffer.add(lastLeaf);
+        // cleanup
+        leafBuffer.clear();
+        leafFringeL = 0;
+        leafFringeR = 0;
       }
 
       if (treeBuffer.size() > 0) {
@@ -630,6 +655,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
         final VectorNode<K> lastTree = calculateSizes(shiftBaseline + 1 * BIT_PARTITION_SIZE, treeContent);
 
         rootBuffer.add(lastTree);
+        // cleanup
+        treeBuffer.clear();
       }
 
       final VectorNode[] rootContent = rootBuffer.toArray(new VectorNode[rootBuffer.size()]);
@@ -641,8 +668,10 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       final VectorNode<K> rootNode = calculateSizes(shiftBaseline + 2 * BIT_PARTITION_SIZE, rootContent);
 
       rootBuffer.clear();
-      treeBuffer.clear();
-      leafBuffer.clear();
+
+      assert leafBuffer.isEmpty();
+      assert treeBuffer.isEmpty();
+      assert rootBuffer.isEmpty();
 
       return rootNode;
     }
@@ -723,6 +752,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     int segmentCountLevel0 = segmentCount(items.length);
 
     VectorNode<K> possibleResult = Stream.of(items).collect(toVectorNodeInner(shiftBaseline));
+    assert possibleResult.size() == (nodeL.size() + nodeM.size() + nodeR.size());
 
     return possibleResult;
   }
@@ -1008,6 +1038,12 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 //      assert sizeFringeL == content[0].sizeFringeL();
 //      assert sizeFringeR == content[content.length - 1].sizeFringeR();
 //    }
+
+    // TODO: avoid situations when adjacent nodes underflow (can also happen when using `take` or `drop`
+    if (contentSizesSummed.length > 1 && contentSizesSummed[contentSizesSummed.length - 1] == contentSizesSummed.length) {
+      // TODO: uncomment for assert stopping for triaging
+      // assert false; // all adjacent singleton nodes
+    }
 
     return new FringedVectorNode<K>(sizeFringeL, compactedSizemap, sizeFringeR, contentSizesSingle, contentSizesSummed, content);
   }
@@ -1395,6 +1431,9 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     private ContentVectorNode(Object[] content) {
       this.content = content;
 
+      assert Arrays.stream(content).noneMatch(isInstanceOf(VectorNode.class));
+      assert Arrays.stream(content).noneMatch(isInstanceOf(ContentVectorNode.class));
+      assert Arrays.stream(content).noneMatch(isInstanceOf(FringedVectorNode.class));
       assert content.length <= BIT_COUNT_OF_INDEX;
     }
 

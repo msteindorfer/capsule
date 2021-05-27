@@ -17,7 +17,7 @@ public class FunctionUtils {
     return item -> (R) item;
   }
 
-  public static <T> Predicate<T> isInstanceOf(Class<T> inputClass) {
+  public static <T> Predicate<Object> isInstanceOf(Class<T> inputClass) {
     return item -> inputClass.isInstance(item);
   }
 
