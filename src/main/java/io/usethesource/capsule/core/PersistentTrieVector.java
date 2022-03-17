@@ -100,14 +100,15 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return !a || b.getAsBoolean();
   }
 
+  private static final boolean stressTestConcatenate = true;
+
   /*
    * NOTE: the 'left shadow' is always explicit (newRelaxedPath), because by default
    * vectors are left-aligned and right-ragged.
    */
   @Override
   public Vector.Immutable<K> pushFront(K item) {
-    // stress test concatenate
-    if (true) return PersistentTrieVector.of(item).concatenate(this);
+    if (stressTestConcatenate) return PersistentTrieVector.of(item).concatenate(this);
 
     final int newShift = root.hasFullFront() ? shift + BIT_PARTITION_SIZE : shift;
     final int newLength = length + 1;
@@ -134,8 +135,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
    */
   @Override
   public Vector.Immutable<K> pushBack(K item) {
-    // stress test concatenate
-    if (true) return this.concatenate(PersistentTrieVector.of(item));
+    if (stressTestConcatenate) return this.concatenate(PersistentTrieVector.of(item));
 
     final int newShift = root.hasFullBack() ? shift + BIT_PARTITION_SIZE : shift;
     final int newLength = length + 1;
