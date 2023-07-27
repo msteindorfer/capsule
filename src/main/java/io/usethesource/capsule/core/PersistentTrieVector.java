@@ -37,6 +37,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return EMPTY_VECTOR;
   }
 
+  public static final <K> Vector.Immutable<K> of(K item) {
+    final VectorNode<K> newRootNode = new ContentVectorNode<>(new Object[]{item});
+    return new PersistentTrieVector<>(newRootNode, 0, 1);
+  }
+
   @Override
   public int size() {
     return size;
