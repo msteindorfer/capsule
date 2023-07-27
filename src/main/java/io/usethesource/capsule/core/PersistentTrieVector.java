@@ -23,14 +23,14 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   private final VectorNode<K> root;
   private final int shift;
-  private final int size;
+  private final int length;
   // private final Object[] head;
   // private final Object[] tail;
 
-  public PersistentTrieVector(VectorNode<K> root, int shift, int size) {
+  public PersistentTrieVector(VectorNode<K> root, int shift, int length) {
     this.root = root;
     this.shift = shift;
-    this.size = size;
+    this.length = length;
   }
 
   public static final <K> Vector.Immutable<K> of() {
@@ -44,7 +44,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   @Override
   public int size() {
-    return size;
+    return length;
   }
 
   @Override
@@ -81,8 +81,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   @Override
   public Vector.Immutable<K> pushBack(K item) {
-    final int newSize = size + 1;
-    final int newShift = minimumShift(size); // TODO size or newSize
+    final int newLength = length + 1;
+    final int newShift = minimumShift(length); // TODO size or newSize
 
     if (newShift > shift) {
       final VectorNode<K> newLeafNode = new ContentVectorNode<>(new Object[]{item});
@@ -91,11 +91,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
               newPath(newLeafNode, shift)
       });
 
-      return new PersistentTrieVector<>(newRootNode, newShift, newSize);
+      return new PersistentTrieVector<>(newRootNode, newShift, newLength);
     }
 
-    final VectorNode<K> newRootNode = root.pushBack(size, item, shift);
-    return new PersistentTrieVector<>(newRootNode, shift, newSize);
+    final VectorNode<K> newRootNode = root.pushBack(length, item, shift);
+    return new PersistentTrieVector<>(newRootNode, shift, newLength);
   }
 
   private static final <K> VectorNode<K> newPath(VectorNode<K> node, int level) {
