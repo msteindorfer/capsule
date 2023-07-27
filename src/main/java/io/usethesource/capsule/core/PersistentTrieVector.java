@@ -1087,6 +1087,15 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   @Override
+  public java.util.Iterator<K> iterator() {
+    var indices = java.util.stream.IntStream.range(0, size());
+
+    return indices
+            .mapToObj(index -> this.get(index).get())
+            .iterator();
+  }
+
+  @Override
   public boolean equals(final Object other) {
     if (other instanceof PersistentTrieVector) {
       final PersistentTrieVector<K> that = (PersistentTrieVector<K>) other;
