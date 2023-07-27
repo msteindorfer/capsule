@@ -9,7 +9,7 @@ package io.usethesource.capsule;
 
 import java.util.Optional;
 
-public interface Vector<K> {
+public interface Vector<K> extends java.lang.Iterable<K> {
 
   int size();
 
