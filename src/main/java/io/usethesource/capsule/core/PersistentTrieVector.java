@@ -259,4 +259,78 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
             .iterator();
   }
 
+  @Override
+  public boolean equals(final Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (other == null) {
+      return false;
+    }
+
+    if (other instanceof PersistentTrieVector) {
+      final PersistentTrieVector<K> that = (PersistentTrieVector<K>) other;
+
+      if (length != that.length) {
+        return false;
+      }
+
+      for (int i = 0; i < length; i++) {
+        if (!get(i).equals(that.get(i))) {
+          return false;
+        }
+      }
+
+      return true;
+//    } else if (other instanceof java.util.List) {
+//      java.util.List that = (java.util.List) other;
+//
+//      if (this.size() != that.size()) {
+//        return false;
+//      }
+//
+//      for (int i = 0; i < length; i++) {
+//        if (!get(i).equals(that.get(i))) {
+//          return false;
+//        }
+//      }
+//
+//      return true;
+    }
+
+    return false;
+  }
+
+  // `hashCode` implementation according to `java.util.List#hashCode()` specification.
+  @Override
+  public int hashCode() {
+    var hashCode = 1;
+
+    for (K item : this) {
+      hashCode *= 31;
+      hashCode += java.util.Objects.hashCode(item);
+    }
+
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    if (length == 0) {
+      return "[]";
+    }
+
+    StringBuffer sb = new StringBuffer();
+    sb.append("[");
+
+    sb.append(get(0).get());
+    for (int i = 1; i < length; i++) {
+      sb.append(", ");
+      sb.append(get(i).get());
+    }
+
+    sb.append("]");
+    return sb.toString();
+  }
+
 }
