@@ -103,6 +103,88 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   @Override
+  public Vector.Immutable<K> update(int index, K item) {
+    if (index < 0 || index >= length) {
+      throw new IndexOutOfBoundsException(
+              String.format("Index %d out of interval [0,%d)", index, length));
+    }
+
+    final Vector.Immutable<K> lhs = take(index);
+    final Vector.Immutable<K> rhs = drop(index + 1);
+
+    return lhs.pushBack(item).concatenate(rhs);
+  }
+
+  @Override
+  public Vector.Immutable<K> take(int count) {
+    if (count <= 0) {
+      return EMPTY_VECTOR;
+    } else if (count >= size()) {
+      return this;
+    } else {
+      // TODO: optimize placeholder snippet
+      Vector.Immutable<K> tmp = Vector.Immutable.of();
+
+      java.util.Iterator<K> remainingElements = stream().limit(count).iterator();
+      while (remainingElements.hasNext()) {
+        tmp = tmp.pushBack(remainingElements.next());
+      }
+
+      return tmp;
+    }
+  }
+
+  @Override
+  public Vector.Immutable<K> drop(int count) {
+    if (count <= 0) {
+      return this;
+    } else if (count >= size()) {
+      return EMPTY_VECTOR;
+    } else {
+      // TODO: optimize placeholder snippet
+      Vector.Immutable<K> tmp = Vector.Immutable.of();
+
+      java.util.Iterator<K> remainingElements = stream().skip(count).iterator();
+      while (remainingElements.hasNext()) {
+        tmp = tmp.pushBack(remainingElements.next());
+      }
+
+      return tmp;
+    }
+  }
+
+  @Override
+  public Vector.Immutable<K> concatenate(Vector.Immutable<K> that) {
+    if (this.size() == 0) return that;
+    if (that.size() == 0) return this;
+
+    if (this.size() == 1) {
+      K item = this.getUnchecked(0);
+      return that.pushFront(item);
+    }
+
+    // TODO: optimize placeholder snippet
+    Vector.Immutable<K> tmp = this;
+
+    for (K item : that) {
+      tmp = tmp.pushBack(item);
+    }
+
+    return tmp;
+  }
+
+  public Vector.Immutable<K> pushFront(K item) {
+    // TODO: optimize placeholder snippet
+    Vector.Immutable<K> tmp = Vector.Immutable.of(item);
+
+    for (K _item : this) {
+      tmp = tmp.pushBack(_item);
+    }
+
+    return tmp;
+  }
+
+  @Override
   public Vector.Immutable<K> pushBack(K item) {
     final int newLength = length + 1;
     final int newShift = minimumShift(length); // TODO size or newSize
