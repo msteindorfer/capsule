@@ -53,6 +53,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return root.get(index, shift);
   }
 
+  @SuppressWarnings("OptionalGetWithoutIsPresent")
+  private K getUnchecked(int index) {
+    return get(index).get();
+  }
+
   private static int blockOffset(final int index) {
     if (index < BIT_COUNT_OF_INDEX) {
       return 0;
@@ -257,7 +262,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     var indices = java.util.stream.IntStream.range(0, size());
 
     return indices
-            .mapToObj(index -> this.get(index).get())
+            .mapToObj(this::getUnchecked)
             .iterator();
   }
 
@@ -282,7 +287,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       }
 
       for (int i = 0; i < length; i++) {
-        if (!get(i).equals(that.get(i))) {
+        if (!getUnchecked(i).equals(that.getUnchecked(i))) {
           return false;
         }
       }
