@@ -1149,20 +1149,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   @Override
   public String toString() {
-    if (length == 0) {
-      return "[]";
-    }
-
-    StringBuilder sb = new StringBuilder();
-    sb.append("[");
-
-    sb.append(get(0).get());
-    for (int i = 1; i < length; i++) {
-      sb.append(", ");
-      sb.append(get(i).get());
-    }
-
-    sb.append("]");
-    return sb.toString();
+    return stream()
+            .map(K::toString)
+            .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
   }
 }
