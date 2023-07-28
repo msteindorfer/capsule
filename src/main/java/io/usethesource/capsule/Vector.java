@@ -31,6 +31,30 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
     Vector.Immutable<K> concatenate(Vector.Immutable<K> that);
 
+    static <K> Vector.Immutable<K> of() {
+      return io.usethesource.capsule.core.PersistentTrieVector.<K>of();
+    }
+
+    static <K> Vector.Immutable<K> of(K item) {
+      return io.usethesource.capsule.core.PersistentTrieVector.<K>of().pushBack(item);
+    }
+
+    static <K> Vector.Immutable<K> of(K item0, K item1) {
+      return io.usethesource.capsule.core.PersistentTrieVector.<K>of().pushBack(item0).pushBack(item1);
+    }
+
+    static <K> Vector.Immutable<K> of(K item0, K item1, K item2) {
+      return io.usethesource.capsule.core.PersistentTrieVector.<K>of().pushBack(item0).pushBack(item1).pushBack(item2);
+    }
+
+    static <K> Vector.Immutable<K> of(K item0, K item1, K item2, K item3) {
+      return io.usethesource.capsule.core.PersistentTrieVector.<K>of().pushBack(item0).pushBack(item1).pushBack(item2).pushBack(item3);
+    }
+
+    static <K> Vector.Immutable<K> of(K item0, K item1, K item2, K item3, K item4) {
+      return io.usethesource.capsule.core.PersistentTrieVector.<K>of().pushBack(item0).pushBack(item1).pushBack(item2).pushBack(item3).pushBack(item4);
+    }
+
   }
 
   interface Transient<K> extends Vector<K> {
