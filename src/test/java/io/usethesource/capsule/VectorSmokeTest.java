@@ -49,7 +49,7 @@ public class VectorSmokeTest {
     assert vector.size() == SIZE;
 
     for (int i = 0; i < input.length; i++) {
-      assertEquals(Integer.valueOf(input[i]), vector.get(MAX_INDEX - i).get());
+      assertEquals(Integer.valueOf(input[i]), vector.get(MAX_INDEX - i));
     }
   }
 
@@ -70,7 +70,7 @@ public class VectorSmokeTest {
     assert vector.size() == SIZE;
 
     for (int i = 0; i < input.length; i++) {
-      assertEquals(Integer.valueOf(input[i]), vector.get(i).get());
+      assertEquals(Integer.valueOf(input[i]), vector.get(i));
     }
   }
 
@@ -100,7 +100,7 @@ public class VectorSmokeTest {
     int[] allInput = IntStream.concat(Arrays.stream(inputPushFront), Arrays.stream(inputPushBack)).toArray();
 
     for (int i = 0; i < allInput.length; i++) {
-      assertEquals(Integer.valueOf(allInput[i]), vector.get(i).get());
+      assertEquals(Integer.valueOf(allInput[i]), vector.get(i));
     }
   }
 

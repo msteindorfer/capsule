@@ -13,7 +13,7 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
   int size();
 
-  Optional<K> get(int index);
+  K get(int index);
 
   interface Immutable<K> extends Vector<K> {
 

@@ -15,7 +15,7 @@ import java.util.Optional;
 import io.usethesource.capsule.Vector;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class PersistentTrieVector<K> implements Vector.Immutable<K> {
+public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.List<K> {
 
   private static final VectorNode EMPTY_NODE = new ContentVectorNode<>(new Object[]{});
 
@@ -49,13 +49,79 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   @Override
-  public Optional<K> get(int index) {
-    return root.get(index, shift);
+  public boolean isEmpty() {
+    return length == 0;
+  }
+
+  @Override
+  public boolean contains(Object object) {
+    java.util.function.Predicate<K> predicate = (K element) -> java.util.Objects.equals(element, object);
+    return stream().anyMatch(predicate);
   }
 
   @SuppressWarnings("OptionalGetWithoutIsPresent")
-  private K getUnchecked(int index) {
-    return get(index).get();
+  @Override
+  public K get(int index) {
+    return root.get(index, shift).get();
+  }
+
+  @Override
+  public K set(int index, K element) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void add(int index, K element) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public K remove(int index) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int indexOf(Object object) {
+    java.util.function.IntPredicate predicate = (int index) -> java.util.Objects.equals(this.get(index), object);
+
+    return java.util.stream.IntStream.range(0, length)
+            .filter(predicate)
+            .findFirst()
+            .orElse(-1);
+  }
+
+  @Override
+  public int lastIndexOf(Object object) {
+    java.util.function.IntPredicate predicate = (int index) -> java.util.Objects.equals(this.get(index), object);
+
+    return java.util.stream.IntStream.range(0, length)
+            .map(index -> length - index - 1) // reverse indices
+            .filter(predicate)
+            .findFirst()
+            .orElse(-1);
+  }
+
+  @Override
+  public java.util.ListIterator<K> listIterator() {
+    throw new UnsupportedOperationException("Not yet implemented."); // TODO: implement to fulfill conformance
+  }
+
+  @Override
+  public java.util.ListIterator<K> listIterator(int index) {
+    throw new UnsupportedOperationException("Not yet implemented."); // TODO: implement to fulfill conformance
+  }
+
+  @Override
+  public java.util.List<K> subList(int fromIndex, int toIndex) {
+    if (fromIndex < 0 || toIndex > length || fromIndex > toIndex) {
+      throw new IndexOutOfBoundsException(
+              String.format("Sub-list interval [%d,%d) not included in list interval [0,%d)", fromIndex, toIndex, length));
+    }
+
+    return stream()
+            .skip(fromIndex)
+            .limit(toIndex - fromIndex)
+            .collect(java.util.stream.Collectors.toUnmodifiableList());
   }
 
   private static int blockOffset(final int index) {
@@ -159,7 +225,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     if (that.size() == 0) return this;
 
     if (this.size() == 1) {
-      K item = this.getUnchecked(0);
+      K item = this.get(0);
       return that.pushFront(item);
     }
 
@@ -344,11 +410,70 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     var indices = java.util.stream.IntStream.range(0, size());
 
     return indices
-            .mapToObj(this::getUnchecked)
+            .mapToObj(this::get)
             .iterator();
   }
 
-  private java.util.stream.Stream<K> stream() {
+  @SuppressWarnings("SimplifyStreamApiCallChains")
+  @Override
+  public Object[] toArray() {
+    return stream().toArray();
+  }
+
+  @SuppressWarnings({"NullableProblems", "SimplifyStreamApiCallChains"})
+  @Override
+  public <T> T[] toArray(final T[] a) {
+    return stream()
+            .collect(java.util.stream.Collectors.toList())
+            .toArray(a);
+  }
+
+  @Override
+  public boolean add(K k) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean remove(Object o) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean containsAll(java.util.Collection<?> collection) {
+    return collection.stream().allMatch(this::contains);
+  }
+
+  @SuppressWarnings("NullableProblems")
+  @Override
+  public boolean addAll(java.util.Collection<? extends K> collection) {
+    throw new UnsupportedOperationException();
+  }
+
+  @SuppressWarnings("NullableProblems")
+  @Override
+  public boolean addAll(int index, java.util.Collection<? extends K> collection) {
+    throw new UnsupportedOperationException();
+  }
+
+  @SuppressWarnings("NullableProblems")
+  @Override
+  public boolean removeAll(java.util.Collection<?> collection) {
+    throw new UnsupportedOperationException();
+  }
+
+  @SuppressWarnings("NullableProblems")
+  @Override
+  public boolean retainAll(java.util.Collection<?> collection) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void clear() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public java.util.stream.Stream<K> stream() {
     return java.util.stream.StreamSupport.stream(this.spliterator(), false);
   }
 
@@ -369,26 +494,26 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       }
 
       for (int i = 0; i < length; i++) {
-        if (!getUnchecked(i).equals(that.getUnchecked(i))) {
+        if (!get(i).equals(that.get(i))) {
           return false;
         }
       }
 
       return true;
-//    } else if (other instanceof java.util.List) {
-//      java.util.List that = (java.util.List) other;
-//
-//      if (this.size() != that.size()) {
-//        return false;
-//      }
-//
-//      for (int i = 0; i < length; i++) {
-//        if (!get(i).equals(that.get(i))) {
-//          return false;
-//        }
-//      }
-//
-//      return true;
+    } else if (other instanceof java.util.List) {
+      java.util.List that = (java.util.List) other;
+
+      if (this.size() != that.size()) {
+        return false;
+      }
+
+      for (int i = 0; i < length; i++) {
+        if (!get(i).equals(that.get(i))) {
+          return false;
+        }
+      }
+
+      return true;
     }
 
     return false;

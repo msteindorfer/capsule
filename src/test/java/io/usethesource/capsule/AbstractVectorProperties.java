@@ -54,8 +54,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     boolean containsInsertedValues = IntStream.range(0, inputValues.size())
         .allMatch(index -> {
-          Optional<T> a = Optional.of(inputValues.get(index));
-          Optional<T> b = finalTestVector.get(inputValues.size() - 1 - index);
+          var a = inputValues.get(index);
+          var b = finalTestVector.get(inputValues.size() - 1 - index);
           return Objects.equals(a, b);
         });
 
@@ -78,8 +78,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     boolean containsInsertedValues = IntStream.range(0, inputValues.size())
         .allMatch(index -> {
-          Optional<T> a = Optional.of(inputValues.get(index));
-          Optional<T> b = finalTestVector.get(initialVector.size() + index);
+          var a = inputValues.get(index);
+          var b = finalTestVector.get(initialVector.size() + index);
           return Objects.equals(a, b);
         });
 
@@ -90,7 +90,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
   public void concatenateOneEqualsPushFront(@Size(min = 0, max = MAX_SIZE) final CT initialVector,
                                             @Size(min = 1, max = 1) final CT singleton) {
     Vector.Immutable<T> resultConcatenate = singleton.concatenate(initialVector);
-    Vector.Immutable<T> resultPush = initialVector.pushFront(singleton.get(0).get()); // TODO consider adding `first()`
+    Vector.Immutable<T> resultPush = initialVector.pushFront(singleton.get(0)); // TODO consider adding `first()`
 
     assertEquals(
         resultConcatenate,
@@ -101,7 +101,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
   public void concatenateOneEqualsPushBack(@Size(min = 0, max = MAX_SIZE) final CT initialVector,
                                            @Size(min = 1, max = 1) final CT singleton) {
     Vector.Immutable<T> resultConcatenate = initialVector.concatenate(singleton);
-    Vector.Immutable<T> resultPush = initialVector.pushBack(singleton.get(0).get());  // TODO consider adding `first()`
+    Vector.Immutable<T> resultPush = initialVector.pushBack(singleton.get(0));  // TODO consider adding `first()`
 
     assertEquals(
         resultConcatenate,
@@ -118,8 +118,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     boolean containsVectorOne = IntStream.range(0, vectorOne.size())
         .allMatch(index -> {
-          Optional<T> a = vectorOne.get(index);
-          Optional<T> b = result.get(index);
+          var a = vectorOne.get(index);
+          var b = result.get(index);
           return Objects.equals(a, b);
         });
 
@@ -127,8 +127,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     boolean containsVectorTwo = IntStream.range(0, vectorTwo.size())
         .allMatch(index -> {
-          Optional<T> a = vectorTwo.get(index);
-          Optional<T> b = result.get(vectorOne.size() + index);
+          var a = vectorTwo.get(index);
+          var b = result.get(vectorOne.size() + index);
           return Objects.equals(a, b);
         });
 
@@ -165,11 +165,11 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertEquals(inputVector.size(), resultVector.size());
 
     List<Integer> inputListSorted = new ArrayList<>();
-    for (int i = 0; i < inputVector.size(); i++) inputListSorted.add((Integer) inputVector.get(i).get());
+    for (int i = 0; i < inputVector.size(); i++) inputListSorted.add((Integer) inputVector.get(i));
     Collections.sort(inputListSorted);
 
     List<Integer> resultListSorted = new ArrayList<>();
-    for (int i = 0; i < inputVector.size(); i++) resultListSorted.add((Integer) resultVector.get(i).get());
+    for (int i = 0; i < inputVector.size(); i++) resultListSorted.add((Integer) resultVector.get(i));
     Collections.sort(resultListSorted);
 
     assertEquals(inputListSorted, resultListSorted);
@@ -183,12 +183,12 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     assertEquals(result.size(), vector.size() + 1);
 
-    assertEquals(result.get(index).get(), newItem);
+    assertEquals(result.get(index), newItem);
 
     boolean containsValuesBeforeIndex = IntStream.range(0, index)
         .allMatch(i -> {
-          Optional<T> a = vector.get(i);
-          Optional<T> b = result.get(i);
+          var a = vector.get(i);
+          var b = result.get(i);
           return Objects.equals(a, b);
         });
 
@@ -196,8 +196,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     boolean containsValuesAfterIndex = IntStream.range(index, vector.size())
         .allMatch(i -> {
-          Optional<T> a = vector.get(i);
-          Optional<T> b = result.get(i + 1);
+          var a = vector.get(i);
+          var b = result.get(i + 1);
           return Objects.equals(a, b);
         });
 
@@ -214,8 +214,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     boolean containsInsertedValues = IntStream.range(0, count)
         .allMatch(index -> {
-          Optional<T> a = vector.get(index);
-          Optional<T> b = result.get(index);
+          var a = vector.get(index);
+          var b = result.get(index);
           return Objects.equals(a, b);
         });
 
@@ -232,8 +232,8 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
 
     boolean containsInsertedValues = IntStream.range(0, result.size())
         .allMatch(index -> {
-          Optional<T> a = vector.get(count + index);
-          Optional<T> b = result.get(index);
+          var a = vector.get(count + index);
+          var b = result.get(index);
           return Objects.equals(a, b);
         });
 
@@ -248,13 +248,13 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     final CT result = (CT) vector.update(index, updatedItem);
 
     assertEquals(vector.size(), result.size());
-    assertEquals(updatedItem, result.get(index).get());
+    assertEquals(updatedItem, result.get(index));
 
     boolean unmodifiedItemsEqual = IntStream.range(0, vector.size())
         .filter(i -> i != index)
         .allMatch(i -> {
-          Optional<T> a = vector.get(i);
-          Optional<T> b = result.get(i);
+          var a = vector.get(i);
+          var b = result.get(i);
           return Objects.equals(a, b);
         });
 
