@@ -1088,6 +1088,10 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
             .iterator();
   }
 
+  private java.util.stream.Stream<K> stream() {
+    return java.util.stream.StreamSupport.stream(this.spliterator(), false);
+  }
+
   @Override
   public boolean equals(final Object other) {
     if (other == this) {
