@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import io.usethesource.capsule.Vector;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   private static final VectorNode EMPTY_NODE = new ContentVectorNode<>(new Object[]{});
@@ -27,17 +28,17 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   // private final Object[] head;
   // private final Object[] tail;
 
-  public PersistentTrieVector(VectorNode<K> root, int shift, int length) {
+  PersistentTrieVector(VectorNode<K> root, int shift, int length) {
     this.root = root;
     this.shift = shift;
     this.length = length;
   }
 
-  public static final <K> Vector.Immutable<K> of() {
+  public static <K> Vector.Immutable<K> of() {
     return EMPTY_VECTOR;
   }
 
-  public static final <K> Vector.Immutable<K> of(K item) {
+  public static <K> Vector.Immutable<K> of(K item) {
     final VectorNode<K> newRootNode = new ContentVectorNode<>(new Object[]{item});
     return new PersistentTrieVector<>(newRootNode, 0, 1);
   }
@@ -52,7 +53,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return root.get(index, shift);
   }
 
-  private static final int blockOffset(final int index) {
+  private static int blockOffset(final int index) {
     if (index < BIT_COUNT_OF_INDEX) {
       return 0;
     } else {
@@ -60,11 +61,12 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     }
   }
 
-  private static final int blockRelativeIndex(final int index) {
+  @SuppressWarnings("unused")
+  private static int blockRelativeIndex(final int index) {
     return index - blockOffset(index);
   }
 
-  private static final int minimumShift(final int index) {
+  private static int minimumShift(final int index) {
     int bitWidth = BIT_COUNT_OF_INDEX - Integer.numberOfLeadingZeros(index);
 
     if (bitWidth % BIT_PARTITION_SIZE == 0) {
@@ -92,10 +94,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     final Vector.Immutable<K> lhs = take(index);
     final Vector.Immutable<K> rhs = drop(index);
 
-    final Vector.Immutable<K> tmp = lhs.pushBack(item);
-    final Vector.Immutable<K> res = tmp.concatenate(rhs);
-
-    return res;
+    return lhs.pushBack(item).concatenate(rhs);
   }
 
   @Override
@@ -117,7 +116,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return new PersistentTrieVector<>(newRootNode, shift, newLength);
   }
 
-  private static final <K> VectorNode<K> newPath(VectorNode<K> node, int level) {
+  private static <K> VectorNode<K> newPath(VectorNode<K> node, int level) {
     if (level == 0) {
       return node;
     } else {
@@ -132,6 +131,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
     int BIT_COUNT_OF_INDEX = 32;
     int BIT_PARTITION_SIZE = 5;
+    @SuppressWarnings("unused")
     int BIT_PARTITION_MASK = 0b11111;
 
     Optional<K> get(int index, int shift);
@@ -154,6 +154,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       return content[blockRelativeIndex].get(index, shift - BIT_PARTITION_SIZE);
     }
 
+    @SuppressWarnings({"UnnecessaryLocalVariable", "IfStatementWithIdenticalBranches"})
     @Override
     public VectorNode<K> pushBack(int index, K item, int shift) {
       int blockRelativeIndex = (index >>> shift) & 0b11111;
@@ -194,6 +195,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   }
 
+  @SuppressWarnings("unused")
   private static final class RelaxedVectorNode<K> implements VectorNode<K> {
 
     @Override
@@ -320,7 +322,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       return "[]";
     }
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append("[");
 
     sb.append(get(0).get());
