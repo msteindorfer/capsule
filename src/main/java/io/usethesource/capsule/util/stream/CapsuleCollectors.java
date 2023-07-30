@@ -63,4 +63,39 @@ public class CapsuleCollectors {
         }, SetMultimap.Transient::freeze, UNORDERED);
   }
 
+  @SuppressWarnings("unused")
+  public static <T> Collector<T, ?, io.usethesource.capsule.Vector.Immutable<T>> toVector() {
+    return new DefaultCollector<T, ImmutableVectorHolder, io.usethesource.capsule.Vector.Immutable<T>>(
+        ImmutableVectorHolder::new,
+        ImmutableVectorHolder::accumulate,
+        ImmutableVectorHolder::combine,
+        ImmutableVectorHolder::instance,
+        Collections.emptySet());
+  }
+
+  private static class ImmutableVectorHolder<T> {
+    private io.usethesource.capsule.Vector.Immutable<T> instance;
+
+    ImmutableVectorHolder() {
+      this.instance = io.usethesource.capsule.Vector.Immutable.of();
+    }
+
+    ImmutableVectorHolder(io.usethesource.capsule.Vector.Immutable<T> instance) {
+      this.instance = instance;
+    }
+
+    io.usethesource.capsule.Vector.Immutable<T> instance() {
+      return instance;
+    }
+
+    void accumulate(T item) {
+      instance = instance.pushBack(item);
+    }
+
+    static <T> ImmutableVectorHolder<T> combine(ImmutableVectorHolder<T> left, ImmutableVectorHolder<T> right) {
+      left.instance = left.instance.concatenate(right.instance);
+      return left;
+    }
+  }
+
 }
