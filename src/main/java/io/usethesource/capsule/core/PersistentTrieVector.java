@@ -564,6 +564,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     }
 
     @Override
+    public boolean isEmpty() {
+      return delegate.isEmpty();
+    }
+
+    @Override
     public K get(int index) {
       return delegate.get(index);
     }
