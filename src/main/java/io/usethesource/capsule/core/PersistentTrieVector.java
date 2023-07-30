@@ -253,7 +253,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   @Override
   public Vector.Immutable<K> pushBack(K item) {
     final int newLength = length + 1;
-    final int newShift = minimumShift(length); // TODO size or newSize
+    final int newShift = minimumShift(length);
 
     if (newShift > shift) {
       final VectorNode<K> newLeafNode = new ContentVectorNode<>(new Object[]{item});
