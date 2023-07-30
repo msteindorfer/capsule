@@ -13,6 +13,8 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
   int size();
 
+  boolean isEmpty();
+
   K get(int index);
 
   interface Immutable<K> extends Vector<K> {
