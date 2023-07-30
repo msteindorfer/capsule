@@ -358,21 +358,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
   }
 
-  @SuppressWarnings("unused")
-  private static final class RelaxedVectorNode<K> implements VectorNode<K> {
-
-    @Override
-    public Optional<K> get(int index, int shift) {
-      throw new UnsupportedOperationException("Not yet implemented.");
-    }
-
-    @Override
-    public VectorNode<K> pushBack(int index, K item, int shift) {
-      throw new UnsupportedOperationException("Not yet implemented.");
-    }
-
-  }
-
   private static final class ContentVectorNode<K> implements VectorNode<K> {
 
     private final Object[] content;
