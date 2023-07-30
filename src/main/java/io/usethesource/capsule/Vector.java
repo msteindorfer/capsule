@@ -31,6 +31,10 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
     Vector.Immutable<K> concatenate(Vector.Immutable<K> that);
 
+    boolean isTransientSupported();
+
+    Vector.Transient<K> asTransient();
+
     static <K> Vector.Immutable<K> of() {
       return io.usethesource.capsule.core.PersistentTrieVector.<K>of();
     }
@@ -58,6 +62,46 @@ public interface Vector<K> extends java.lang.Iterable<K> {
   }
 
   interface Transient<K> extends Vector<K> {
+
+    boolean insertAt(int index, K item);
+
+    boolean update(int index, K item);
+
+    boolean pushFront(K item);
+
+    boolean pushBack(K item);
+
+//    boolean take(int count);
+//
+//    boolean drop(int count);
+//
+//    boolean concatenate(Vector.Immutable<K> that);
+
+    Vector.Immutable<K> freeze();
+
+    static <K> Vector.Transient<K> of() {
+      return Vector.Immutable.<K>of().asTransient();
+    }
+
+    static <K> Vector.Transient<K> of(K item) {
+      return Vector.Immutable.<K>of().pushBack(item).asTransient();
+    }
+
+    static <K> Vector.Transient<K> of(K item0, K item1) {
+      return Vector.Immutable.<K>of().pushBack(item0).pushBack(item1).asTransient();
+    }
+
+    static <K> Vector.Transient<K> of(K item0, K item1, K item2) {
+      return Vector.Immutable.<K>of().pushBack(item0).pushBack(item1).pushBack(item2).asTransient();
+    }
+
+    static <K> Vector.Transient<K> of(K item0, K item1, K item2, K item3) {
+      return Vector.Immutable.<K>of().pushBack(item0).pushBack(item1).pushBack(item2).pushBack(item3).asTransient();
+    }
+
+    static <K> Vector.Transient<K> of(K item0, K item1, K item2, K item3, K item4) {
+      return Vector.Immutable.<K>of().pushBack(item0).pushBack(item1).pushBack(item2).pushBack(item3).pushBack(item4).asTransient();
+    }
 
   }
 

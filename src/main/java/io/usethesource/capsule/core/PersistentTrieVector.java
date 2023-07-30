@@ -420,6 +420,16 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
   }
 
+  @Override
+  public boolean isTransientSupported() {
+    return true;
+  }
+
+  @Override
+  public Transient<K> asTransient() {
+    return new TransientTrieVector<>(this);
+  }
+
   interface VectorNode<K> {
 
     int BIT_COUNT_OF_INDEX = 32;
@@ -1283,4 +1293,59 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
             .map(K::toString)
             .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
   }
+  static final class TransientTrieVector<K, V> implements
+          io.usethesource.capsule.Vector.Transient<K> {
+
+    private Vector.Immutable<K> delegate;
+
+    TransientTrieVector(PersistentTrieVector<K> trieVector) {
+      this.delegate = trieVector;
+    }
+
+    @Override
+    public int size() {
+      return delegate.size();
+    }
+
+    @Override
+    public K get(int index) {
+      return delegate.get(index);
+    }
+
+    @Override
+    public java.util.Iterator<K> iterator() {
+      return delegate.iterator();
+    }
+
+    @Override
+    public boolean insertAt(int index, K item) {
+      delegate = delegate.insertAt(index, item);
+      return true;
+    }
+
+    @Override
+    public boolean update(int index, K item) {
+      delegate = delegate.update(index, item);
+      return true;
+    }
+
+    @Override
+    public boolean pushFront(K item) {
+      delegate = delegate.pushFront(item);
+      return true;
+    }
+
+    @Override
+    public boolean pushBack(K item) {
+      delegate = delegate.pushBack(item);
+      return true;
+    }
+
+    @Override
+    public Vector.Immutable<K> freeze() {
+      return delegate;
+    }
+
+  }
+
 }
