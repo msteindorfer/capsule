@@ -9,6 +9,8 @@ package io.usethesource.capsule.core;
 
 import static io.usethesource.capsule.core.PersistentTrieVector.VectorNode.BIT_COUNT_OF_INDEX;
 import static io.usethesource.capsule.core.PersistentTrieVector.VectorNode.BIT_PARTITION_SIZE;
+import static io.usethesource.capsule.util.ArrayUtils.copyAndInsert;
+import static io.usethesource.capsule.util.ArrayUtils.copyAndSet;
 
 import java.util.Optional;
 
@@ -330,7 +332,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
       return content[blockRelativeIndex].get(index, shift - BIT_PARTITION_SIZE);
     }
 
-    @SuppressWarnings({"UnnecessaryLocalVariable", "IfStatementWithIdenticalBranches"})
+    @SuppressWarnings({"UnnecessaryLocalVariable"})
     @Override
     public VectorNode<K> pushBack(int index, K item, int shift) {
       int blockRelativeIndex = (index >>> shift) & 0b11111;
@@ -341,29 +343,22 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
       if (blockRelativeIndex == content.length) {
         // copy and insert node
         final VectorNode[] src = this.content;
-        final VectorNode[] dst = new VectorNode[src.length + 1];
 
         final int idx = blockRelativeIndex;
         final VectorNode<K> newLeafNode = new ContentVectorNode<>(new Object[]{item});
         final VectorNode<K> newNode = newPath(newLeafNode, shift - BIT_PARTITION_SIZE);
 
-        // copy 'src' and insert 1 element(s) at position 'idx'
-        System.arraycopy(src, 0, dst, 0, idx);
-        dst[idx] = newNode;
-        System.arraycopy(src, idx, dst, idx + 1, src.length - idx);
+        final VectorNode[] dst = copyAndInsert(VectorNode[]::new, src, idx, newNode);
 
         return new RegularVectorNode<>(dst);
       } else {
         // copy and set node
         final VectorNode[] src = this.content;
-        final VectorNode[] dst = new VectorNode[src.length];
 
         final int idx = blockRelativeIndex;
         final VectorNode<K> newNode = src[idx].pushBack(index, item, shift - BIT_PARTITION_SIZE);
 
-        // copy 'src' and set 1 element(s) at position 'idx'
-        System.arraycopy(src, 0, dst, 0, src.length);
-        dst[idx] = newNode;
+        final VectorNode[] dst = copyAndSet(VectorNode[]::new, src, idx, newNode);
 
         return new RegularVectorNode<>(dst);
       }
@@ -399,14 +394,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
       assert content.length < BIT_COUNT_OF_INDEX;
 
       final Object[] src = this.content;
-      final Object[] dst = new Object[src.length + 1];
-
-      final int idx = src.length;
-
-      // copy 'src' and insert 1 element(s) at position 'idx'
-      System.arraycopy(src, 0, dst, 0, idx);
-      dst[idx] = item;
-      System.arraycopy(src, idx, dst, idx + 1, src.length - idx);
+      final Object[] dst = copyAndInsert(Object[]::new, src, src.length, item);
 
       return new ContentVectorNode<>(dst);
     }
