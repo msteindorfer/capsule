@@ -15,13 +15,21 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
   boolean isEmpty();
 
+  boolean contains(Object object);
+
   K get(int index);
+
+  int indexOf(Object object);
+
+  int lastIndexOf(Object object);
 
   interface Immutable<K> extends Vector<K> {
 
     Vector.Immutable<K> insertAt(int index, K item);
 
     Vector.Immutable<K> update(int index, K item);
+
+    Vector.Immutable<K> delete(int index);
 
     Vector.Immutable<K> pushFront(K item);
 
@@ -68,6 +76,8 @@ public interface Vector<K> extends java.lang.Iterable<K> {
     boolean insertAt(int index, K item);
 
     boolean update(int index, K item);
+
+    boolean delete(int index);
 
     boolean pushFront(K item);
 

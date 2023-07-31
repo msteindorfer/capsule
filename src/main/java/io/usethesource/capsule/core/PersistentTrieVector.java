@@ -246,6 +246,19 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   }
 
   @Override
+  public Immutable<K> delete(int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexOutOfBoundsException(
+          String.format("Index %d out of interval [0,%d)", index, length));
+    }
+
+    final Vector.Immutable<K> lhs = take(index);
+    final Vector.Immutable<K> rhs = drop(index + 1);
+
+    return lhs.concatenate(rhs);
+  }
+
+  @Override
   public Vector.Immutable<K> take(int count) {
     if (count <= 0) {
       return EMPTY_VECTOR;
@@ -1313,8 +1326,23 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     }
 
     @Override
+    public boolean contains(Object object) {
+      return delegate.contains(object);
+    }
+
+    @Override
     public K get(int index) {
       return delegate.get(index);
+    }
+
+    @Override
+    public int indexOf(Object object) {
+      return delegate.indexOf(object);
+    }
+
+    @Override
+    public int lastIndexOf(Object object) {
+      return delegate.lastIndexOf(object);
     }
 
     @Override
@@ -1331,6 +1359,12 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     @Override
     public boolean update(int index, K item) {
       delegate = delegate.update(index, item);
+      return true;
+    }
+
+    @Override
+    public boolean delete(int index) {
+      delegate = delegate.delete(index);
       return true;
     }
 
