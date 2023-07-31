@@ -177,10 +177,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
               String.format("Index %d out of interval [0,%d)", index, length));
     }
 
-    final Vector.Immutable<K> lhs = take(index);
-    final Vector.Immutable<K> rhs = drop(index + 1);
-
-    return lhs.pushBack(item).concatenate(rhs);
+    final VectorNode<K> newRootNode = root.update(index, item, shift);
+    return new PersistentTrieVector<>(newRootNode, shift, length);
   }
 
   @Override
@@ -314,6 +312,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
     Optional<K> get(int index, int shift);
 
+    VectorNode<K> update(int index, K item, int shift);
+
     VectorNode<K> pushBack(int index, K item, int shift);
 
   }
@@ -330,6 +330,21 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     public Optional<K> get(int index, int shift) {
       int blockRelativeIndex = (index >>> shift) & 0b11111;
       return content[blockRelativeIndex].get(index, shift - BIT_PARTITION_SIZE);
+    }
+
+    @Override
+    public VectorNode<K> update(int index, K item, int shift) {
+      int blockRelativeIndex = (index >>> shift) & 0b11111;
+
+      // copy and set node
+      final VectorNode[] src = this.content;
+
+      final int idx = blockRelativeIndex;
+      final VectorNode<K> newNode = src[idx].update(index, item, shift - BIT_PARTITION_SIZE);
+
+      final VectorNode[] dst = copyAndSet(VectorNode[]::new, src, idx, newNode);
+
+      return new RegularVectorNode<>(dst);
     }
 
     @SuppressWarnings({"UnnecessaryLocalVariable"})
@@ -386,6 +401,19 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
       } else {
         return Optional.of((K) content[blockRelativeIndex]);
       }
+    }
+
+    @Override
+    public VectorNode<K> update(int index, K item, int shift) {
+      assert shift == 0;
+      assert ((index >>> shift) & 0b11111) <= content.length;
+
+      int blockRelativeIndex = (index >>> shift) & 0b11111;
+
+      final Object[] src = this.content;
+      final Object[] dst = copyAndSet(Object[]::new, src, blockRelativeIndex, item);
+
+      return new ContentVectorNode<>(dst);
     }
 
     @Override
