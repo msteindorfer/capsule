@@ -7,6 +7,9 @@
  */
 package io.usethesource.capsule;
 
+import io.usethesource.capsule.annotation.Experimental;
+
+@Experimental
 public interface Vector<K> extends java.lang.Iterable<K> {
 
   int size();
@@ -21,6 +24,7 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
   int lastIndexOf(Object object);
 
+  @Experimental
   interface Immutable<K> extends Vector<K> {
 
     Vector.Immutable<K> insertAt(int index, K item);
@@ -69,6 +73,7 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
   }
 
+  @Experimental
   interface Transient<K> extends Vector<K> {
 
     boolean insertAt(int index, K item);
