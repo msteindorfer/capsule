@@ -498,7 +498,12 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
   @Override
   public java.util.stream.Stream<K> stream() {
-    return java.util.stream.StreamSupport.stream(this.spliterator(), false);
+    return Vector.Immutable.super.stream();
+  }
+
+  @Override
+  public java.util.stream.Stream<K> parallelStream() {
+    return Vector.Immutable.super.parallelStream();
   }
 
   @Override

@@ -24,6 +24,14 @@ public interface Vector<K> extends java.lang.Iterable<K> {
 
   int lastIndexOf(Object object);
 
+  default java.util.stream.Stream<K> stream() {
+    return java.util.stream.StreamSupport.stream(spliterator(), false);
+  }
+
+  default java.util.stream.Stream<K> parallelStream() {
+    return java.util.stream.StreamSupport.stream(spliterator(), true);
+  }
+
   @Experimental
   interface Immutable<K> extends Vector<K> {
 
