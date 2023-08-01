@@ -43,15 +43,15 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
   private static final boolean DEBUG = false;
 
   private final AbstractMapNode<K, V> rootNode;
-  private final int cachedHashCode;
+  private final int cachedKeySetHashCode;
   private final int cachedSize;
 
-  PersistentTrieMap(AbstractMapNode<K, V> rootNode, int cachedHashCode, int cachedSize) {
+  PersistentTrieMap(AbstractMapNode<K, V> rootNode, int cachedKeySetHashCode, int cachedSize) {
     this.rootNode = rootNode;
-    this.cachedHashCode = cachedHashCode;
+    this.cachedKeySetHashCode = cachedKeySetHashCode;
     this.cachedSize = cachedSize;
     if (DEBUG) {
-      assert checkHashCodeAndSize(cachedHashCode, cachedSize);
+      assert checkKeySetHashCodeAndSize(cachedKeySetHashCode, cachedSize);
     }
   }
 
@@ -100,16 +100,14 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
     return result;
   }
 
-  private boolean checkHashCodeAndSize(final int targetHash, final int targetSize) {
+  private boolean checkKeySetHashCodeAndSize(final int targetHash, final int targetSize) {
     int hash = 0;
     int size = 0;
 
-    for (Iterator<Map.Entry<K, V>> it = entryIterator(); it.hasNext(); ) {
-      final Map.Entry<K, V> entry = it.next();
-      final K key = entry.getKey();
-      final V val = entry.getValue();
+    for (Iterator<K> it = keyIterator(); it.hasNext(); ) {
+      final K key = it.next();
 
-      hash += key.hashCode() ^ val.hashCode();
+      hash += key.hashCode();
       size += 1;
     }
 
@@ -166,16 +164,10 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
 
     if (details.isModified()) {
       if (details.hasReplacedValue()) {
-        final int valHashOld = details.getReplacedValue().hashCode();
-        final int valHashNew = val.hashCode();
-
-        return new PersistentTrieMap<K, V>(newRootNode,
-            cachedHashCode + ((keyHash ^ valHashNew)) - ((keyHash ^ valHashOld)), cachedSize);
+        return new PersistentTrieMap<K, V>(newRootNode, cachedKeySetHashCode, cachedSize);
       }
 
-      final int valHash = val.hashCode();
-      return new PersistentTrieMap<K, V>(newRootNode, cachedHashCode + ((keyHash ^ valHash)),
-          cachedSize + 1);
+      return new PersistentTrieMap<K, V>(newRootNode, cachedKeySetHashCode + keyHash, cachedSize + 1);
     }
 
     return this;
@@ -199,9 +191,7 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
 
     if (details.isModified()) {
       assert details.hasReplacedValue();
-      final int valHash = details.getReplacedValue().hashCode();
-      return new PersistentTrieMap<K, V>(newRootNode, cachedHashCode - ((keyHash ^ valHash)),
-          cachedSize - 1);
+      return new PersistentTrieMap<K, V>(newRootNode, cachedKeySetHashCode - keyHash, cachedSize - 1);
     }
 
     return this;
@@ -393,7 +383,7 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
         return false;
       }
 
-      if (this.cachedHashCode != that.cachedHashCode) {
+      if (this.cachedKeySetHashCode != that.cachedKeySetHashCode) {
         return false;
       }
 
@@ -436,7 +426,9 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
 
   @Override
   public int hashCode() {
-    return cachedHashCode;
+    return entrySet().stream()
+        .mapToInt(entry -> entry.getKey().hashCode() ^ entry.getValue().hashCode())
+        .sum();
   }
 
   @Override
@@ -1869,16 +1861,16 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
 
     final private AtomicReference<Thread> mutator;
     private AbstractMapNode<K, V> rootNode;
-    private int cachedHashCode;
+    private int cachedKeySetHashCode;
     private int cachedSize;
 
     TransientTrieMap(PersistentTrieMap<K, V> trieMap) {
       this.mutator = new AtomicReference<Thread>(Thread.currentThread());
       this.rootNode = trieMap.rootNode;
-      this.cachedHashCode = trieMap.cachedHashCode;
+      this.cachedKeySetHashCode = trieMap.cachedKeySetHashCode;
       this.cachedSize = trieMap.cachedSize;
       if (DEBUG) {
-        assert checkHashCodeAndSize(cachedHashCode, cachedSize);
+        assert checkHashCodeAndSize(cachedKeySetHashCode, cachedSize);
       }
     }
 
@@ -1886,12 +1878,10 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
       int hash = 0;
       int size = 0;
 
-      for (Iterator<Map.Entry<K, V>> it = entryIterator(); it.hasNext(); ) {
-        final Map.Entry<K, V> entry = it.next();
-        final K key = entry.getKey();
-        final V val = entry.getValue();
+      for (Iterator<K> it = keyIterator(); it.hasNext(); ) {
+        final K key = it.next();
 
-        hash += key.hashCode() ^ val.hashCode();
+        hash += key.hashCode();
         size += 1;
       }
 
@@ -1974,33 +1964,26 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
 
       if (details.isModified()) {
         if (details.hasReplacedValue()) {
-          final V old = details.getReplacedValue();
-
-          final int valHashOld = old.hashCode();
-          final int valHashNew = val.hashCode();
-
           rootNode = newRootNode;
-          cachedHashCode = cachedHashCode + (keyHash ^ valHashNew) - (keyHash ^ valHashOld);
 
           if (DEBUG) {
-            assert checkHashCodeAndSize(cachedHashCode, cachedSize);
+            assert checkHashCodeAndSize(cachedKeySetHashCode, cachedSize);
           }
           return details.getReplacedValue();
         } else {
-          final int valHashNew = val.hashCode();
           rootNode = newRootNode;
-          cachedHashCode += (keyHash ^ valHashNew);
+          cachedKeySetHashCode += keyHash;
           cachedSize += 1;
 
           if (DEBUG) {
-            assert checkHashCodeAndSize(cachedHashCode, cachedSize);
+            assert checkHashCodeAndSize(cachedKeySetHashCode, cachedSize);
           }
           return null;
         }
       }
 
       if (DEBUG) {
-        assert checkHashCodeAndSize(cachedHashCode, cachedSize);
+        assert checkHashCodeAndSize(cachedKeySetHashCode, cachedSize);
       }
       return null;
     }
@@ -2035,20 +2018,19 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
 
       if (details.isModified()) {
         assert details.hasReplacedValue();
-        final int valHash = details.getReplacedValue().hashCode();
 
         rootNode = newRootNode;
-        cachedHashCode = cachedHashCode - (keyHash ^ valHash);
+        cachedKeySetHashCode -= keyHash;
         cachedSize = cachedSize - 1;
 
         if (DEBUG) {
-          assert checkHashCodeAndSize(cachedHashCode, cachedSize);
+          assert checkHashCodeAndSize(cachedKeySetHashCode, cachedSize);
         }
         return details.getReplacedValue();
       }
 
       if (DEBUG) {
-        assert checkHashCodeAndSize(cachedHashCode, cachedSize);
+        assert checkHashCodeAndSize(cachedKeySetHashCode, cachedSize);
       }
 
       return null;
@@ -2281,7 +2263,7 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
           return false;
         }
 
-        if (this.cachedHashCode != that.cachedHashCode) {
+        if (this.cachedKeySetHashCode != that.cachedKeySetHashCode) {
           return false;
         }
 
@@ -2324,7 +2306,9 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
 
     @Override
     public int hashCode() {
-      return cachedHashCode;
+      return entrySet().stream()
+          .mapToInt(entry -> entry.getKey().hashCode() ^ entry.getValue().hashCode())
+          .sum();
     }
 
     @Override
@@ -2343,7 +2327,7 @@ public class PersistentTrieMap<K, V> implements io.usethesource.capsule.Map.Immu
       }
 
       mutator.set(null);
-      return new PersistentTrieMap<K, V>(rootNode, cachedHashCode, cachedSize);
+      return new PersistentTrieMap<K, V>(rootNode, cachedKeySetHashCode, cachedSize);
     }
   }
 
