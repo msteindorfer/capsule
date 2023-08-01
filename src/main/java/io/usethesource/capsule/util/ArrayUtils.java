@@ -7,10 +7,7 @@
  */
 package io.usethesource.capsule.util;
 
-import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 public class ArrayUtils {
 
@@ -109,47 +106,6 @@ public class ArrayUtils {
     return dst;
   }
 
-  public static <T> T[] copyAndUpdate(IntFunction<T[]> supplier, T[] src, int idx,
-      Function<T,T> updater) {
-
-    final T oldItem = src[idx];
-    final T newItem = updater.apply(oldItem);
-
-    final T[] dst = supplier.apply(src.length);
-
-    System.arraycopy(src, 0, dst, 0, src.length);
-    dst[idx] = newItem;
-
-    return dst;
-  }
-
-  public static <T> T[] copyAndTake(IntFunction<T[]> supplier, T[] src, int idx,
-      Function<T,T> updater) {
-    final T[] dst = supplier.apply(idx + 1);
-
-    final T oldItem = src[idx];
-    final T newItem = updater.apply(oldItem);
-
-    System.arraycopy(src, 0, dst, 0, idx);
-    dst[idx] = newItem;
-
-    return dst;
-  }
-
-  public static <T> T[] copyAndDrop(IntFunction<T[]> supplier, T[] src, int idx,
-      Function<T,T> updater) {
-    final T[] dst = supplier.apply(src.length - idx);
-
-    final T oldItem = src[idx];
-    final T newItem = updater.apply(oldItem);
-
-    dst[0] = newItem;
-    System.arraycopy(src, idx + 1, dst, 1, src.length - idx - 1);
-
-    return dst;
-  }
-
-
   public static <T> T[] copyAndInsert(IntFunction<T[]> supplier, T[] src, int idx, T item) {
     final T[] dst = supplier.apply(src.length + 1);
 
@@ -158,19 +114,6 @@ public class ArrayUtils {
     System.arraycopy(src, idx, dst, idx + 1, src.length - idx);
 
     return dst;
-  }
-
-  public static <T> T[] copyAndRemove(IntFunction<T[]> supplier, T[] src, int idx) {
-    final T[] dst = supplier.apply(src.length - 1);
-
-    System.arraycopy(src, 0, dst, 0, idx);
-    System.arraycopy(src, idx + 1, dst, idx, src.length - idx - 1);
-
-    return dst;
-  }
-
-  public static <T> T[] merge(IntFunction<T[]> supplier, T[]... args) {
-    return Stream.of(args).flatMap(arg -> Stream.of(arg)).toArray(supplier);
   }
 
 }
