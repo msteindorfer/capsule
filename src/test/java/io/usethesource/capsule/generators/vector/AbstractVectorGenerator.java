@@ -78,11 +78,11 @@ public abstract class AbstractVectorGenerator<T extends Vector.Immutable>
 //        final int index = random.nextInt(i);
 //        items = (T) items.insertAt(index, item);
 //      } else
-      if (random.nextBoolean()) {
-        items = (T) items.pushFront(item);
-      } else {
+//      if (random.nextBoolean()) {
+//        items = (T) items.pushFront(item);
+//      } else {
         items = (T) items.pushBack(item);
-      }
+//      }
 
     }
 

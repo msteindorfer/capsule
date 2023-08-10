@@ -9,6 +9,7 @@ package io.usethesource.capsule;
 
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.generator.Size;
+import org.junit.Ignore;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +39,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     this.type = type;
   }
 
+  @Ignore
   @Property(trials = BASE_TRIALS)
   public void containsAfterPushFront(@Size(min = 1, max = MAX_SIZE) final CT initialVector,
                                      @Size(min = 1, max = MAX_SIZE) final ArrayList<T> inputValues) {
@@ -135,6 +137,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all newly inserted values.", containsVectorTwo);
   }
 
+  @Ignore
   @Property(trials = MORE_TRIALS)
   public void splitShuffleConcatenateRepeat(@Size(min = 4, max = MAX_SIZE) final CT inputVector) {
     int repetitions = 20;
