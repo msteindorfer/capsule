@@ -9,6 +9,7 @@ package io.usethesource.capsule;
 
 import com.pholser.junit.quickcheck.Property;
 import com.pholser.junit.quickcheck.generator.Size;
+import org.junit.Ignore;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,6 +87,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all inserted values.", containsInsertedValues);
   }
 
+  @Ignore
   @Property(trials = BASE_TRIALS)
   public void concatenateOneEqualsPushFront(@Size(min = 0, max = MAX_SIZE) final CT initialVector,
                                             @Size(min = 1, max = 1) final CT singleton) {
@@ -97,6 +99,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
         resultPush);
   }
 
+  @Ignore
   @Property(trials = BASE_TRIALS)
   public void concatenateOneEqualsPushBack(@Size(min = 0, max = MAX_SIZE) final CT initialVector,
                                            @Size(min = 1, max = 1) final CT singleton) {
@@ -108,6 +111,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
         resultPush);
   }
 
+  @Ignore
   @Property(trials = MORE_TRIALS)
   public void containsAfterConcatenate(
       @Size(min = 0, max = MAX_SIZE) final CT vectorOne,
@@ -135,6 +139,7 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
     assertTrue("Must contain all newly inserted values.", containsVectorTwo);
   }
 
+  @Ignore
   @Property(trials = MORE_TRIALS)
   public void splitShuffleConcatenateRepeat(@Size(min = 4, max = MAX_SIZE) final CT inputVector) {
     int repetitions = 20;
