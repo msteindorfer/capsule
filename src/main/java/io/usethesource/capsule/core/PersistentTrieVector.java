@@ -16,33 +16,24 @@ import static io.usethesource.capsule.util.ArrayUtils.copyAndRemove;
 import static io.usethesource.capsule.util.ArrayUtils.copyAndSet;
 import static io.usethesource.capsule.util.ArrayUtils.copyAndTake;
 import static io.usethesource.capsule.util.ArrayUtils.copyAndUpdate;
-import static io.usethesource.capsule.util.ArrayUtils.merge;
 import static io.usethesource.capsule.util.BitmapUtils.bitpos;
 import static io.usethesource.capsule.util.BitmapUtils.index;
 import static io.usethesource.capsule.util.BitmapUtils.mask;
-import static io.usethesource.capsule.util.FunctionUtils.asInstanceOf;
 import static io.usethesource.capsule.util.FunctionUtils.isInstanceOf;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collector.Characteristics;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import io.usethesource.capsule.Vector;
 import io.usethesource.capsule.core.PersistentTrieVector.PathVisitor.Arguments;
-import io.usethesource.capsule.util.stream.DefaultCollector;
 
 public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
-  private static final VectorNode EMPTY_FRINGED_NODE = VectorNode.of(0, 0, new VectorNode[]{}, 0);
   private static final VectorNode EMPTY_NODE = VectorNode.of(0, new Object[]{});
 
   private static final PersistentTrieVector EMPTY_VECTOR =
@@ -100,16 +91,12 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return !a || b.getAsBoolean();
   }
 
-  private static final boolean stressTestConcatenate = true;
-
   /*
    * NOTE: the 'left shadow' is always explicit (newRelaxedPath), because by default
    * vectors are left-aligned and right-ragged.
    */
   @Override
   public Vector.Immutable<K> pushFront(K item) {
-    if (stressTestConcatenate) return PersistentTrieVector.of(item).concatenate(this);
-
     final int newShift = root.hasFullFront() ? shift + BIT_PARTITION_SIZE : shift;
     final int newLength = length + 1;
 
@@ -135,8 +122,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
    */
   @Override
   public Vector.Immutable<K> pushBack(K item) {
-    if (stressTestConcatenate) return this.concatenate(PersistentTrieVector.of(item));
-
     final int newShift = root.hasFullBack() ? shift + BIT_PARTITION_SIZE : shift;
     final int newLength = length + 1;
 
@@ -230,531 +215,28 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   @Override
-  public Vector.Immutable<K> concatenate(Vector.Immutable<K> other) {
-//    if (this.size() == 0) return other;
-//    if (other.size() == 0) return this;
-//
-//    if (this.size() == 1) return other.pushFront(this.get(0).get());
-//    if (other.size() == 1) return this.pushBack(other.get(0).get());
+  public Vector.Immutable<K> concatenate(Vector.Immutable<K> that) {
+    if (this.size() == 0) return that;
+    if (that.size() == 0) return this;
 
-    if (other instanceof PersistentTrieVector) {
-      final PersistentTrieVector<K> that = (PersistentTrieVector<K>) other;
-
-      final Path pathL = this.root.accept(
-          new PathVisitor(() -> new Path(this.shift)),
-          Arguments.of(this.length == 0 ? 0 : this.length - 1, this.length == 0 ? 0 : this.length - 1, this.shift));
-
-      final Path pathR = that.root.accept(
-          new PathVisitor(() -> new Path(that.shift)),
-          Arguments.of(0, 0, that.shift));
-
-      int maxShift = Math.max(this.shift, that.shift);
-
-      final VectorNode<K> nodeL = pathL.nodeAtShift(maxShift)
-          .orElse(newLeftProlongedPath(maxShift, pathL.top(), Math.min(pathL.shift, maxShift)));
-
-      final VectorNode<K> nodeR = pathR.nodeAtShift(maxShift)
-          .orElse(newRightProlongedPath(maxShift, pathR.top(), Math.min(pathR.shift, maxShift)));
-
-      VectorNode<K> newRootNode = mergeTrees(maxShift, nodeL, nodeR);
-
-      int newShift = Math.max(this.shift, that.shift) + BIT_PARTITION_SIZE;
-      int newLength = this.length + that.length;
-
-      while (newRootNode.canReduceShift()) {
-        newShift -= BIT_PARTITION_SIZE;
-        newRootNode = newRootNode.reduceShift();
-      }
-
-      return new PersistentTrieVector<>(newRootNode, newShift, newLength);
-    } else {
-      throw new UnsupportedOperationException("Not yet implemented.");
-    }
-  }
-
-  private VectorNode<K> mergeTrees(int shift, VectorNode<K> nodeL, VectorNode<K> nodeR) {
-    if (shift == 0) {
-      return mergeLeaves(nodeL, nodeR);
-    } else {
-      if (shift == 5) {
-//        final VectorNode<K> nodeM = mergeLeaves(nodeL.last(), nodeR.first());
-//        return mergeAndRebalanceLastTwoLevels(nodeL.init(shift), nodeM, nodeR.tail(shift));
-
-        return mergeAndRebalanceLastTwoLevels(nodeL, EMPTY_FRINGED_NODE, nodeR);
-//      } else if (shift == 10) {
-////        merged = mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(), nodeR.first());
-////
-////        return mergeAndRebalanceMiddleLevels(nodeL.init(shift), merged, nodeR.tail(shift));
-//
-////        final VectorNode<K> merged1 =
-////            mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(), nodeR.first());
-//
-//        final VectorNode<K> mergedLeaves = mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(),
-//            nodeR.first());
-//
-//        nodeM = mergeAndRebalanceMiddleLevels(EMPTY_FRINGED_NODE, mergedLeaves, nodeR.tail(shift)).reduceShift();
-//
-//        return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, EMPTY_FRINGED_NODE);
-      } else {
-        final VectorNode<K> nodeM = mergeTrees(shift - BIT_PARTITION_SIZE, nodeL.last(), nodeR.first());
-        assert nodeM.size() == nodeL.last().size() + nodeR.first().size();
-
-        return mergeAndRebalanceUpperLevels(shift - BIT_PARTITION_SIZE, nodeL.init(shift), nodeM, nodeR.tail(shift));
-      }
-    }
-  }
-
-  private static <K> VectorNode<K> mergeLeaves(VectorNode<K> nodeL, VectorNode<K> nodeR) {
-    final ContentVectorNode<K> leafL = (ContentVectorNode<K>) nodeL;
-    final ContentVectorNode<K> leafR = (ContentVectorNode<K>) nodeR;
-
-    if (leafL.content.length == 32) {
-      return VectorNode
-          .of(BIT_PARTITION_SIZE, 0, new VectorNode[]{leafL, leafR}, leafR.content.length);
-    } else {
-      int totalSize = leafL.content.length + leafR.content.length;
-
-      if (totalSize > BIT_COUNT_OF_INDEX) {
-        final int newSizeL = BIT_COUNT_OF_INDEX;
-        final int newSizeR = totalSize - newSizeL;
-
-        final Object[] contentL = new Object[newSizeL];
-        System.arraycopy(leafL.content, 0, contentL, 0, leafL.content.length);
-        System.arraycopy(leafR.content, 0, contentL, leafL.content.length,
-            BIT_COUNT_OF_INDEX - leafL.content.length);
-
-        final Object[] contentR = new Object[newSizeR];
-        System.arraycopy(leafR.content, leafR.content.length - newSizeR, contentR, 0, newSizeR);
-
-        final VectorNode<K> newLeafL = VectorNode.of(0, contentL);
-        final VectorNode<K> newLeafR = VectorNode.of(0, contentR);
-
-        return VectorNode
-            .of(BIT_PARTITION_SIZE, newSizeL, new VectorNode[]{newLeafL, newLeafR}, newSizeR);
-      } else {
-        final int newSizeR = totalSize;
-
-        final Object[] contentR = new Object[newSizeR];
-        System.arraycopy(leafL.content, 0, contentR, 0, leafL.content.length);
-        System.arraycopy(leafR.content, 0, contentR, leafL.content.length,
-            newSizeR - leafL.content.length);
-
-        final VectorNode<K> newLeafR = VectorNode.of(0, contentR);
-
-        return VectorNode
-            .of(BIT_PARTITION_SIZE, 0, new VectorNode[]{newLeafR}, newSizeR);
-      }
-    }
-  }
-
-  private VectorNode<K> mergeAndRebalanceLastTwoLevels(
-      VectorNode<K> nodeL, VectorNode<K> nodeM, VectorNode<K> nodeR) {
-
-    return mergeAndRebalanceLastTwoLevels(
-        (FringedVectorNode<K>) nodeL,
-        (FringedVectorNode<K>) nodeM,
-        (FringedVectorNode<K>) nodeR);
-  }
-
-  private VectorNode<K> mergeAndRebalanceLastTwoLevels(
-      FringedVectorNode<K> nodeL, FringedVectorNode<K> nodeM, FringedVectorNode<K> nodeR) {
-
-    VectorNode[] merged = merge(VectorNode[]::new, nodeL.content, nodeM.content, nodeR.content);
-
-    VectorNode[] mergedMR = merge(VectorNode[]::new, nodeM.content, nodeR.content);
-
-    int segmentCountLevel1 = segmentCount(merged.length);
-
-    // TODO: rework implementation; it's currently flawed since it rewrites (at least) all the leaf nodes and re-aligns
-    // them (i.e., left-aligned, right-ragged).
-    Object[] items =
-        Stream.of(merged)
-            .map(asInstanceOf(ContentVectorNode.class))
-            .flatMap(leafNode -> Stream.of(leafNode.content))
-            .toArray();
-
-    int segmentCountLevel0 = segmentCount(items.length);
-
-    VectorNode<?> possibleResult = Stream.of(items).collect(toVectorNodeLeaf());
-    assert possibleResult.size() == (nodeL.size() + nodeM.size() + nodeR.size());
-
-    return (VectorNode<K>) possibleResult;
-  }
-
-  @Deprecated
-  private VectorNode<K> mergeAndRebalanceMiddleLevels(
-      VectorNode<K> nodeL, VectorNode<K> nodeM, VectorNode<K> nodeR) {
-
-    return mergeAndRebalanceMiddleLevels(
-        (FringedVectorNode<K>) nodeL,
-        (FringedVectorNode<K>) nodeM,
-        (FringedVectorNode<K>) nodeR);
-  }
-
-  @Deprecated
-  private VectorNode<K> mergeAndRebalanceMiddleLevels(
-      FringedVectorNode<K> nodeL, FringedVectorNode<K> nodeM, FringedVectorNode<K> nodeR) {
-
-    VectorNode[] merged = merge(VectorNode[]::new, nodeL.content, nodeM.content, nodeR.content);
-
-    int segmentCountLevel1 = segmentCount(merged.length);
-
-    Object[] items =
-        Stream.of(merged)
-            .map(asInstanceOf(FringedVectorNode.class))
-            .flatMap(treeNode -> Stream.of(treeNode.content))
-            .map(asInstanceOf(ContentVectorNode.class))
-            .flatMap(leafNode -> Stream.of(leafNode.content))
-            .toArray();
-
-    int segmentCountLevel0 = segmentCount(items.length);
-
-    VectorNode<?> possibleResult = Stream.of(items).collect(toVectorNodeLeaf());
-
-    // return VectorNode.of(15, new VectorNode<K>[] {(VectorNode<K>) possibleResult});
-
-    return newLeftProlongedPath(15, (VectorNode<K>) possibleResult, 10);
-
-    // return (VectorNode<K>) possibleResult;
-  }
-
-  static class LeafPrototype<K> {
-
-    private ArrayList<VectorNode<K>> rootBuffer;
-    private ArrayList<VectorNode<K>> treeBuffer;
-    private ArrayList<K> leafBuffer;
-
-    LeafPrototype() {
-      rootBuffer = new ArrayList<>(BIT_COUNT_OF_INDEX);
-      treeBuffer = new ArrayList<>(BIT_COUNT_OF_INDEX);
-      leafBuffer = new ArrayList<>(BIT_COUNT_OF_INDEX);
+    if (this.size() == 1) {
+      K item = this.get(0).get();
+      return that.pushFront(item);
     }
 
-    public void add(K item) {
+    // TODO: optimize placeholder snippet
+    Vector.Immutable<K> tmp = this;
 
-      // overflow level 0?
-      if (leafBuffer.size() == BIT_COUNT_OF_INDEX) {
-        VectorNode<K> nextLeaf = VectorNode.of(0, leafBuffer.toArray());
-
-        treeBuffer.add(nextLeaf);
-        leafBuffer.clear();
-      }
-
-      // overflow level 1?
-      if (treeBuffer.size() == BIT_COUNT_OF_INDEX) {
-        final VectorNode[] treeContent = treeBuffer.toArray(new VectorNode[treeBuffer.size()]);
-        VectorNode<K> nextTree = VectorNode.of(BIT_PARTITION_SIZE, 0, treeContent, 0);
-
-        rootBuffer.add(nextTree);
-        treeBuffer.clear();
-      }
-
-      // add to level 0
-      leafBuffer.add(item);
-    }
-
-    public VectorNode<K> result() {
-      int sizeFringeR = 0;
-
-      if (leafBuffer.size() > 0) {
-        final VectorNode<K> lastLeaf = VectorNode.of(0, leafBuffer.toArray());
-        treeBuffer.add(lastLeaf);
-
-        sizeFringeR = leafBuffer.size();
-      }
-
-      if (treeBuffer.size() > 0) {
-        final VectorNode[] treeContent = treeBuffer.toArray(new VectorNode[treeBuffer.size()]);
-        final VectorNode<K> lastTree = VectorNode
-            .of(5, 0, treeContent, treeContent[treeContent.length - 1].size());
-        rootBuffer.add(lastTree);
-      }
-
-      final VectorNode[] rootContent = rootBuffer.toArray(new VectorNode[rootBuffer.size()]);
-      final VectorNode<K> rootNode = VectorNode
-          .of(10, 0, rootContent, rootContent[rootContent.length - 1].size());
-
-      rootBuffer.clear();
-      treeBuffer.clear();
-      leafBuffer.clear();
-
-      return rootNode;
-    }
-
-  }
-
-  static class TreePrototype<K> {
-
-    private final int shiftBaseline;
-
-    private ArrayList<VectorNode<K>> rootBuffer;
-    private ArrayList<VectorNode<K>> treeBuffer;
-    private ArrayList<VectorNode<K>> leafBuffer;
-
-    private int leafFringeL;
-    private int leafFringeR;
-
-    TreePrototype(int shiftBaseline) {
-      this.shiftBaseline = shiftBaseline;
-
-      this.rootBuffer = new ArrayList<>(BIT_COUNT_OF_INDEX);
-      this.treeBuffer = new ArrayList<>(BIT_COUNT_OF_INDEX);
-      this.leafBuffer = new ArrayList<>(BIT_COUNT_OF_INDEX);
-    }
-
-    private VectorNode<K> previousLeaf() {
-      return leafBuffer.get(leafBuffer.size() - 1);
-    }
-
-    public void add(VectorNode<K> item) {
-      // overflow level 0?
-
-      switch (leafBuffer.size()) {
-        case 00: {
-          leafBuffer.add(item);
-          leafFringeL += item.sizeFringeL();
-          break;
-        }
-//        case 01: {
-//          /* NOTE: does not work b/c of ContentNode not committing to left or right balancing. */
-//
-////          // assert previousLeaf().hasRegularBack();
-////          assert item.hasRegularFront();
-//
-//          leafBuffer.add(item);
-//          leafFringeL += item.sizeFringeL();
-//          break;
-//        }
-//        case 31: {
-////          assert item.hasRegularFront();
-////          // assert item.hasRegularBack();
-//
-//          leafBuffer.add(item);
-//          leafFringeR += item.sizeFringeR();
-//          break;
-//        }
-        case 32: {
-          final VectorNode[] leafContent = leafBuffer.toArray(new VectorNode[leafBuffer.size()]);
-
-          // TODO: what is sizeFringeL?
-          // TODO: what is sizeFringeR?
-          // VectorNode<K> nextLeaf = VectorNode.of(shiftBaseline + 0 * BIT_PARTITION_SIZE, 0, leafContent, 0);
-          VectorNode<K> nextLeaf = calculateSizes(shiftBaseline + 0 * BIT_PARTITION_SIZE, leafContent);
-
-          treeBuffer.add(nextLeaf);
-          leafBuffer.clear();
-          leafFringeL = 0;
-          leafFringeR = 0;
-
-          // add to level 0
-          leafBuffer.add(item);
-          leafFringeL += item.sizeFringeL();
-
-          // overflow level 1?
-          if (treeBuffer.size() == BIT_COUNT_OF_INDEX) {
-            final VectorNode[] treeContent = treeBuffer.toArray(new VectorNode[treeBuffer.size()]);
-
-            // TODO: what is sizeFringeL?
-            // TODO: what is sizeFringeR?
-            // VectorNode<K> nextTree = VectorNode.of(shiftBaseline + 1 * BIT_PARTITION_SIZE, 0, treeContent, 0);
-            VectorNode<K> nextTree = calculateSizes(shiftBaseline + 1 * BIT_PARTITION_SIZE, treeContent);
-
-            rootBuffer.add(nextTree);
-            treeBuffer.clear();
-
-          }
-          break;
-        }
-        default: {
-//          assert previousLeaf().hasRegularBack();
-//          assert item.hasRegularFront();
-
-          assert !leafBuffer.isEmpty();
-          int lastIndex = leafBuffer.size() - 1;
-
-          if (leafBuffer.get(lastIndex).size() + item.size() <= 32) {
-            // merge adjacent leaf nodes if their sizes underflow
-            // NOTE: this doesn't seem to fix issues when imbalances appear higher up in the tree
-
-            // TODO consider more general underflow metrics, based on fill factor, e.g.,:
-            // `(1. * leafBuffer.stream().mapToInt(VectorNode::size).sum()) / (32. * leafBuffer.size())`
-
-            // update at level 0
-            VectorNode<K> mergedLeaves = ((FringedVectorNode<K>) mergeLeaves(leafBuffer.get(lastIndex), item)).content[0]; // TODO replace / rework `mergeLeaves`
-            leafBuffer.set(lastIndex, mergedLeaves);
-          } else {
-            // add to level 0
-            leafBuffer.add(item);
-          }
-        }
-      }
-
-//      if (leafBuffer.size() == BIT_COUNT_OF_INDEX) {
-//        final VectorNode[] leafContent = leafBuffer.toArray(new VectorNode[leafBuffer.size()]);
-//
-//        // TODO: what is sizeFringeL?
-//        // TODO: what is sizeFringeR?
-//        VectorNode<K> nextLeaf = VectorNode.of(shiftBaseline + 0 * BIT_PARTITION_SIZE, 0, leafContent, 0);
-//
-//        treeBuffer.add(nextLeaf);
-//        leafBuffer.clear();
-//        leafFringeL = 0;
-//        leafFringeR = 0;
-//
-//        // add to level 0
-//        leafBuffer.add(item);
-//        leafFringeL += item.sizeFringeL();
-//
-//        // overflow level 1?
-//        if (treeBuffer.size() == BIT_COUNT_OF_INDEX) {
-//          final VectorNode[] treeContent = treeBuffer.toArray(new VectorNode[treeBuffer.size()]);
-//
-//          // TODO: what is sizeFringeL?
-//          // TODO: what is sizeFringeR?
-//          VectorNode<K> nextTree = VectorNode.of(shiftBaseline + 1 * BIT_PARTITION_SIZE, 0, treeContent, 0);
-//
-//          rootBuffer.add(nextTree);
-//          treeBuffer.clear();
-//
-//        }
-//      } else {
-//        assert item.hasRegularFront();
-//        assert item.hasRegularBack();
-//
-//        // add to level 0
-//        leafBuffer.add(item);
-//      }
-    }
-
-    public VectorNode<K> result() {
-      if (leafBuffer.size() > 0) {
-//        final VectorNode<K> lastLeaf = VectorNode.of(leafBuffer.toArray());
-//        treeBuffer.add(lastLeaf);
-
-        final VectorNode[] leafContent = leafBuffer.toArray(new VectorNode[leafBuffer.size()]);
-
-        // TODO: what is sizeFringeL?
-        // TODO: what is sizeFringeR?
-        // final VectorNode<K> lastLeaf = VectorNode.of(shiftBaseline + 0 * BIT_PARTITION_SIZE, 0, leafContent, 0); // leafContent[leafContent.length - 1
-        final VectorNode<K> lastLeaf = calculateSizes(shiftBaseline + 0 * BIT_PARTITION_SIZE, leafContent);
-
-        treeBuffer.add(lastLeaf);
-        // cleanup
-        leafBuffer.clear();
-        leafFringeL = 0;
-        leafFringeR = 0;
-      }
-
-      if (treeBuffer.size() > 0) {
-        final VectorNode[] treeContent = treeBuffer.toArray(new VectorNode[treeBuffer.size()]);
-
-        // TODO: what is sizeFringeL?
-        // TODO: what is sizeFringeR?
-//        final VectorNode<K> lastTree = VectorNode
-//            .of(shiftBaseline + 1 * BIT_PARTITION_SIZE, 0, treeContent, treeContent[treeContent.length - 1].size());
-        final VectorNode<K> lastTree = calculateSizes(shiftBaseline + 1 * BIT_PARTITION_SIZE, treeContent);
-
-        rootBuffer.add(lastTree);
-        // cleanup
-        treeBuffer.clear();
-      }
-
-      final VectorNode[] rootContent = rootBuffer.toArray(new VectorNode[rootBuffer.size()]);
-
-      // TODO: what is sizeFringeL?
-      // TODO: what is sizeFringeR?
-//      final VectorNode<K> rootNode = VectorNode
-//          .of(shiftBaseline + 2 * BIT_PARTITION_SIZE, 0, rootContent, rootContent[rootContent.length - 1].size());
-      final VectorNode<K> rootNode = calculateSizes(shiftBaseline + 2 * BIT_PARTITION_SIZE, rootContent);
-
-      rootBuffer.clear();
-
-      assert leafBuffer.isEmpty();
-      assert treeBuffer.isEmpty();
-      assert rootBuffer.isEmpty();
-
-      return rootNode;
-    }
-
-  }
-
-  private static <T, A> Collector<T, ?, VectorNode<T>> toVectorNodeLeaf() {
-
-    final BiConsumer<LeafPrototype<T>, T> accumulator = (prototype, item) -> prototype.add(item);
-
-    return new DefaultCollector<>(
-        () -> new LeafPrototype<T>(),
-        accumulator,
-        (left, right) -> {
-          throw new UnsupportedOperationException("Not yet implemented.");
-        },
-        LeafPrototype::result,
-        EnumSet.noneOf(Characteristics.class));
-  }
-
-  private static <T, A> Collector<VectorNode<T>, ?, VectorNode<T>> toVectorNodeInner(int shiftBaseline) {
-
-    final BiConsumer<TreePrototype<T>, VectorNode<T>> accumulator =
-        (prototype, item) -> prototype.add(item);
-
-    return new DefaultCollector<>(
-        () -> new TreePrototype<T>(shiftBaseline),
-        accumulator,
-        (left, right) -> {
-          throw new UnsupportedOperationException("Not yet implemented.");
-        },
-        TreePrototype::result,
-        EnumSet.noneOf(Characteristics.class));
-  }
-
-  private VectorNode<K> mergeAndRebalanceUpperLevels(int shiftBaseline,
-      VectorNode<K> nodeL, VectorNode<K> nodeM, VectorNode<K> nodeR) {
-
-    return mergeAndRebalanceUpperLevels(shiftBaseline,
-        (FringedVectorNode<K>) nodeL,
-        (FringedVectorNode<K>) nodeM,
-        (FringedVectorNode<K>) nodeR);
-  }
-
-  private VectorNode<K> mergeAndRebalanceUpperLevels(int shiftBaseline,
-      FringedVectorNode<K> nodeL, FringedVectorNode<K> nodeM, FringedVectorNode<K> nodeR) {
-
-//    assert nodeL.sizeFringeR == 0 || nodeL.content.length == 1;
-//    assert nodeM.sizeFringeL == 0 || nodeM.content.length == 1;
-
-    final VectorNode[] merged = merge(VectorNode[]::new, nodeL.content, nodeM.content, nodeR.content);
-
-//    final VectorNode[] merged;
-//
-//    if (nodeM.sizeFringeR == 0) {
-//      merged = merge(VectorNode[]::new, nodeL.content, nodeM.content, nodeR.content);
-//    } else {
-//      assert shiftBaseline == 5;
-//
-//      FringedVectorNode<K> nodeMR = (FringedVectorNode<K>)
-//          mergeAndRebalanceUpperLevels(shiftBaseline, EMPTY_FRINGED_NODE, nodeM, nodeR).reduceShift();
-//
-//      merged = merge(VectorNode[]::new, nodeL.content, nodeMR.content);
+//    // TODO: requires conformance to `java.lang.Iterable`
+//    for (K item : that) {
+//      tmp = tmp.pushBack(item);
 //    }
 
-    // VectorNode[] merged = merge(VectorNode[]::new, nodeL.content, nodeM.content, nodeR.content);
+    for (int i = 0; i < that.size(); i++) {
+      tmp = tmp.pushBack(that.get(i).get());
+    }
 
-    // VectorNode[] mergedMR = merge(VectorNode[]::new, nodeM.content, nodeR.content);
-
-    int segmentCountLevel1 = segmentCount(merged.length);
-
-    VectorNode<K>[] items =
-        Stream.of(merged)
-            .map(asInstanceOf(FringedVectorNode.class))
-            .flatMap(treeNode -> Stream.of(treeNode.content))
-            .toArray(VectorNode[]::new);
-
-    int segmentCountLevel0 = segmentCount(items.length);
-
-    VectorNode<K> possibleResult = Stream.of(items).collect(toVectorNodeInner(shiftBaseline));
-    assert possibleResult.size() == (nodeL.size() + nodeM.size() + nodeR.size());
-
-    return possibleResult;
+    return tmp;
   }
 
   private int segmentCount(int length) {
@@ -926,18 +408,22 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
      */
     VectorNode<K> drop(int index, int remainder, int shift);
 
+    // TODO: implement in all `VectorNode` sub-types
     default VectorNode<K> first() {
       return null;
     }
 
+    // TODO: implement in all `VectorNode` sub-types
     default VectorNode<K> last() {
       return null;
     }
 
+    // TODO: implement in all `VectorNode` sub-types
     default VectorNode<K> init(int shift) {
       return null;
     }
 
+    // TODO: implement in all `VectorNode` sub-types
     default VectorNode<K> tail(int shift) {
       return null;
     }
