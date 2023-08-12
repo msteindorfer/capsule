@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import io.usethesource.capsule.Vector;
 import io.usethesource.capsule.core.PersistentTrieVector.PathVisitor.Arguments;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   private static final VectorNode EMPTY_NODE = VectorNode.of(0, new Object[]{});
@@ -45,7 +46,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   // private final Object[] head;
   // private final Object[] tail;
 
-  public PersistentTrieVector(VectorNode<K> root, int shift, int length) {
+  PersistentTrieVector(VectorNode<K> root, int shift, int length) {
     this.root = root;
     this.shift = shift;
     this.length = length;
@@ -53,11 +54,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     assert root.size() == length;
   }
 
-  public static final <K> Vector.Immutable<K> of() {
+  public static <K> Vector.Immutable<K> of() {
     return EMPTY_VECTOR;
   }
 
-  public static final <K> Vector.Immutable<K> of(K item) {
+  public static <K> Vector.Immutable<K> of(K item) {
     final VectorNode<K> newRootNode = VectorNode.of(0, new Object[]{item});
     return new PersistentTrieVector<>(newRootNode, 0, 1);
   }
@@ -72,7 +73,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return root.get(index, index, shift);
   }
 
-  private static final int minimumShift(final int index) {
+  private static int minimumShift(final int index) {
     int bitWidth = BIT_COUNT_OF_INDEX - Integer.numberOfLeadingZeros(index);
 
     if (bitWidth % BIT_PARTITION_SIZE == 0) {
@@ -83,11 +84,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   // TODO: move to a proper place
-  private static final boolean implies(boolean a, boolean b) {
+  private static boolean implies(boolean a, boolean b) {
     return !a || b;
   }
 
-  private static final boolean implies(boolean a, BooleanSupplier b) {
+  private static boolean implies(boolean a, BooleanSupplier b) {
     return !a || b.getAsBoolean();
   }
 
@@ -159,10 +160,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     final Vector.Immutable<K> lhs = take(index);
     final Vector.Immutable<K> rhs = drop(index);
 
-    final Vector.Immutable<K> tmp = lhs.pushBack(item);
-    final Vector.Immutable<K> res = tmp.concatenate(rhs);
-
-    return res;
+    return lhs.pushBack(item).concatenate(rhs);
   }
 
   @Override
@@ -286,7 +284,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   // TODO: simplify
-  private static final <K> VectorNode<K> newLeftProlongedPath(int shift, VectorNode<K> node, int shiftAtNode) {
+  private static <K> VectorNode<K> newLeftProlongedPath(int shift, VectorNode<K> node, int shiftAtNode) {
     assert shift >= 0;
     assert shift >= shiftAtNode;
 
@@ -303,7 +301,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   // TODO: simplify
-  private static final <K> VectorNode<K> newRightProlongedPath(int shift, VectorNode<K> node, int shiftAtNode) {
+  private static <K> VectorNode<K> newRightProlongedPath(int shift, VectorNode<K> node, int shiftAtNode) {
     assert shift >= 0;
     assert shift >= shiftAtNode;
 
@@ -320,7 +318,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   // TODO: simplify
-  private static final <K> VectorNode<K> newLeftFringedPath(K item, int shift) {
+  private static <K> VectorNode<K> newLeftFringedPath(K item, int shift) {
     if (shift == 0) {
       return VectorNode.of(0, new Object[]{item});
     } else {
@@ -332,7 +330,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
   }
 
   // TODO: simplify
-  private static final <K> VectorNode<K> newRightFringedPath(K item, int shift) {
+  private static <K> VectorNode<K> newRightFringedPath(K item, int shift) {
     if (shift == 0) {
       return VectorNode.of(0, new Object[]{item});
     } else {
@@ -453,7 +451,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
 
   }
 
-  private final static int[] copyAndSum(int[] src) {
+  private static int[] copyAndSum(int[] src) {
     final int[] dst = new int[src.length];
 
     int cumulativeSum = 0;
@@ -463,7 +461,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     return dst;
   }
 
-  private final static <K> FringedVectorNode<K> calculateSizes(int shift, VectorNode[] content) {
+  private static <K> FringedVectorNode<K> calculateSizes(int shift, VectorNode[] content) {
 
     final int[] contentSizesSingle =
         IntStream.range(0, content.length).map(i -> content[i].size()).toArray();
@@ -572,7 +570,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     /*
      * TODO: improve performance (binary search, etc)
      */
-    private final static int offset(int[] cumulativeSizes, int index) {
+    private static int offset(int[] cumulativeSizes, int index) {
       for (int i = 0; i < cumulativeSizes.length; i++) {
         if (cumulativeSizes[i] > index) {
           return i;
@@ -608,7 +606,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       return lazySize;
     }
 
-    private final boolean isFullRegular() {
+    private boolean isFullRegular() {
       final boolean isFullRegular;
 
       if (content.length < 2) {
@@ -623,7 +621,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       return isFullRegular;
     }
 
-    private final boolean isSemiRegular() {
+    private boolean isSemiRegular() {
       final boolean isSemiRegular;
 
       if (content.length < 2) {
@@ -638,7 +636,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       return isSemiRegular;
     }
 
-    private final boolean isEffectivelyRegular(int remainder, int shift) {
+    private boolean isEffectivelyRegular(int remainder, int shift) {
       final int __mask = mask(remainder, shift, BIT_PARTITION_MASK);
       final int __index = index(sizemap, __mask, bitpos(__mask));
       return (sizemap & bitpos(__mask)) == 0 && __index == 0;
@@ -1151,7 +1149,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
       return "[]";
     }
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append("[");
 
     sb.append(get(0).get());
