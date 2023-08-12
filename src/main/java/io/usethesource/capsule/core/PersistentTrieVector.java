@@ -227,13 +227,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K> {
     // TODO: optimize placeholder snippet
     Vector.Immutable<K> tmp = this;
 
-//    // TODO: requires conformance to `java.lang.Iterable`
-//    for (K item : that) {
-//      tmp = tmp.pushBack(item);
-//    }
-
-    for (int i = 0; i < that.size(); i++) {
-      tmp = tmp.pushBack(that.get(i).get());
+    for (K item : that) {
+      tmp = tmp.pushBack(item);
     }
 
     return tmp;
