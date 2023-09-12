@@ -1311,7 +1311,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
             .map(K::toString)
             .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
   }
-  static final class TransientTrieVector<K, V> implements
+  static final class TransientTrieVector<K> implements
           io.usethesource.capsule.Vector.Transient<K> {
 
     private Vector.Immutable<K> delegate;
