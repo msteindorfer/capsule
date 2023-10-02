@@ -486,17 +486,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
     final IntPredicate isFull = (i) -> contentSizesSingle[i] == 1 << shift;
 
-//    final int[] indices = IntStream.range(0, content.length).filter(isFull.negate()).toArray();
-//
-//    final int[] compactedSizesSingle =
-//        IntStream.of(indices).map(i -> contentSizesSingle[i]).toArray();
-//
-//    final int[] compactedSizesSummed =
-//        IntStream.of(indices).map(i -> contentSizesSummed[i]).toArray();
-//
-//    final int compactedSizemap =
-//        IntStream.of(indices).map(i -> 1 << i).reduce(0, (x, y) -> x | y);
-
     final int compactedSizemap =
         IntStream.range(0, content.length)
             .filter(isFull.negate())
@@ -520,19 +509,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
     final int sizeFringeL = (l == 1 << shift) ? 0 : l;
     final int sizeFringeR = (r == 1 << shift) ? 0 : r;
-
-//    if (content.length != 0) {
-////      assert (1 << shift) - (1 << shift - BIT_COUNT_OF_INDEX) + sizeFringeL
-////          == contentSizesSingle[0] % (1 << shift);
-//////          == content[0].sizeFringeL();
-////
-////      assert (1 << shift) - (1 << shift - BIT_COUNT_OF_INDEX) + sizeFringeR
-////          == contentSizesSingle[content.length - 1] % (1 << shift);
-//////          == content[content.length - 1].sizeFringeR();
-//
-//      assert sizeFringeL == content[0].sizeFringeL();
-//      assert sizeFringeR == content[content.length - 1].sizeFringeR();
-//    }
 
     // TODO: avoid situations when adjacent nodes underflow (can also happen when using `take` or `drop`
     if (contentSizesSummed.length > 1 && contentSizesSummed[contentSizesSummed.length - 1] == contentSizesSummed.length) {
