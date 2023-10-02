@@ -7,8 +7,6 @@
  */
 package io.usethesource.capsule.core;
 
-import static io.usethesource.capsule.core.PersistentTrieVector.VectorNode.BIT_COUNT_OF_INDEX;
-import static io.usethesource.capsule.core.PersistentTrieVector.VectorNode.BIT_PARTITION_MASK;
 import static io.usethesource.capsule.core.PersistentTrieVector.VectorNode.BIT_PARTITION_SIZE;
 import static io.usethesource.capsule.util.ArrayUtils.copyAndDrop;
 import static io.usethesource.capsule.util.ArrayUtils.copyAndInsert;
@@ -32,7 +30,7 @@ import java.util.stream.Stream;
 import io.usethesource.capsule.Vector;
 import io.usethesource.capsule.core.PersistentTrieVector.PathVisitor.Arguments;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"unchecked", "rawtypes", "NullableProblems"})
 public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.List<K> {
 
   private static final VectorNode EMPTY_NODE = VectorNode.of(0, new Object[]{});
@@ -43,8 +41,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   private final VectorNode<K> root;
   private final int shift;
   private final int length;
-  // private final Object[] head;
-  // private final Object[] tail;
 
   PersistentTrieVector(VectorNode<K> root, int shift, int length) {
     this.root = root;
@@ -142,16 +138,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
             .skip(fromIndex)
             .limit(toIndex - fromIndex)
             .collect(java.util.stream.Collectors.toUnmodifiableList());
-  }
-
-  private static int minimumShift(final int index) {
-    int bitWidth = BIT_COUNT_OF_INDEX - Integer.numberOfLeadingZeros(index);
-
-    if (bitWidth % BIT_PARTITION_SIZE == 0) {
-      return Math.max(0, (bitWidth / BIT_PARTITION_SIZE) - 1) * BIT_PARTITION_SIZE;
-    } else {
-      return (bitWidth / BIT_PARTITION_SIZE) * BIT_PARTITION_SIZE;
-    }
   }
 
   // TODO: move to a proper place
@@ -316,14 +302,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     return tmp;
   }
 
-  private int segmentCount(int length) {
-    int fullSegmentCount = length >>> BIT_PARTITION_SIZE;
-    int halfSegmentCount = (length & BIT_PARTITION_MASK) != 0 ? 1 : 0;
-
-    int segmentCount = fullSegmentCount + halfSegmentCount;
-    return segmentCount;
-  }
-
   static class Path {
 
     private final int shift;
@@ -338,67 +316,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
       this.nodes = path;
     }
 
-    Optional<VectorNode> nodeAtShift(int shift) {
-      int index = shift / BIT_PARTITION_SIZE;
-
-      if (0 <= index && index < nodes.length) {
-        return Optional.of(nodes[index]);
-      } else {
-        return Optional.empty();
-      }
-    }
-
     void put(int shift, VectorNode item) {
       int index = shift / BIT_PARTITION_SIZE;
       nodes[index] = item;
     }
 
-    VectorNode top() {
-      return nodes[nodes.length - 1];
-    }
-
-//    void pushFront(VectorNode node) {
-//
-//    }
-//
-//    void pushBack(VectorNode node) {
-//
-//    }
-
-  }
-
-  // TODO: simplify
-  private static <K> VectorNode<K> newLeftProlongedPath(int shift, VectorNode<K> node, int shiftAtNode) {
-    assert shift >= 0;
-    assert shift >= shiftAtNode;
-
-    if (shift == shiftAtNode) {
-      return node;
-    } else {
-      final VectorNode[] dst = new VectorNode[]{
-          newLeftProlongedPath(shift - BIT_PARTITION_SIZE, node, shiftAtNode)
-      };
-      final VectorNode<K> newNode = VectorNode.of(shift, 0, dst, node.size());
-
-      return newNode;
-    }
-  }
-
-  // TODO: simplify
-  private static <K> VectorNode<K> newRightProlongedPath(int shift, VectorNode<K> node, int shiftAtNode) {
-    assert shift >= 0;
-    assert shift >= shiftAtNode;
-
-    if (shift == shiftAtNode) {
-      return node;
-    } else {
-      final VectorNode[] dst = new VectorNode[]{
-          newRightProlongedPath(shift - BIT_PARTITION_SIZE, node, shiftAtNode)
-      };
-      final VectorNode<K> newNode = VectorNode.of(shift, node.size(), dst, 0);
-
-      return newNode;
-    }
   }
 
   // TODO: simplify
@@ -997,6 +919,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
   }
 
+  @SuppressWarnings("UnnecessaryLocalVariable")
   private static final class ContentVectorNode<K> implements VectorNode<K> {
 
     private final Object[] content;
@@ -1311,6 +1234,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
             .map(K::toString)
             .collect(java.util.stream.Collectors.joining(", ", "[", "]"));
   }
+
+  @SuppressWarnings("NullableProblems")
   static final class TransientTrieVector<K> implements
           io.usethesource.capsule.Vector.Transient<K> {
 
