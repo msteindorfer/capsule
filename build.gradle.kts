@@ -1,7 +1,7 @@
 plugins {
   `java-library`
   `maven-publish`
-  id("me.champeau.jmh") version "0.7.1"
+  id("me.champeau.jmh") version "0.7.3"
 }
 
 version = version.let { conformVersionToMavenConvention("${it}") }
@@ -9,9 +9,9 @@ version = version.let { conformVersionToMavenConvention("${it}") }
 fun conformVersionToMavenConvention(it: String): String =
   if (project.hasProperty("releaseBuild")) "${it}" else "${it}-SNAPSHOT"
 
-val junitVersion by extra { "5.10.0" }
+val junitVersion by extra { "5.12.1" }
 val junitQuickcheckVersion by extra { "1.0" }
-val slf4jVersion by extra { "2.0.9" }
+val slf4jVersion by extra { "2.0.17" }
 
 dependencies {
   testImplementation("com.pholser:junit-quickcheck-core:${junitQuickcheckVersion}")
@@ -22,22 +22,22 @@ dependencies {
   jmh(group = "com.github.msteindorfer", name = "memory-measurer", version = "5be4fe7")
 
   /*** 3rd party JVM languages with persistent collection libraries ***/
-  jmh(group = "org.clojure", name = "clojure", version = "1.11.1")
-  jmh(group = "org.scala-lang", name = "scala-library", version = "2.13.11")
-  jmh(group = "org.scala-lang.modules", name = "scala-collection-contrib_2.13", version = "0.3.0")
+  jmh(group = "org.clojure", name = "clojure", version = "1.12.0")
+  jmh(group = "org.scala-lang", name = "scala-library", version = "2.13.16")
+  jmh(group = "org.scala-lang.modules", name = "scala-collection-contrib_2.13", version = "0.4.0")
 
   /*** 3rd party Java libraries with persistent data structures ***/
   jmh(group = "com.github.andrewoma.dexx", name = "collection", version = "0.7")
-  jmh(group = "io.lacuna", name = "bifurcan", version = "0.2.0-alpha6")
-  jmh(group = "io.vavr", name = "vavr", version = "0.10.4")
+  jmh(group = "io.lacuna", name = "bifurcan", version = "0.2.0-rc1")
+  jmh(group = "io.vavr", name = "vavr", version = "0.10.6")
   jmh(group = "org.organicdesign", name = "Paguro", version = "3.10.3")
-  jmh(group = "org.pcollections", name = "pcollections", version = "4.0.1")
+  jmh(group = "org.pcollections", name = "pcollections", version = "4.0.2")
 
   /*** 3rd party Java libraries with immutable data structures and/or specialized primitive collections ***/
   jmh(group = "com.goldmansachs", name = "gs-collections-api", version = "7.0.3")
   jmh(group = "com.goldmansachs", name = "gs-collections", version = "7.0.3")
-  jmh(group = "com.google.guava", name = "guava", version = "31.1-jre")
-  jmh(group = "it.unimi.dsi", name = "fastutil", version = "8.5.12")
+  jmh(group = "com.google.guava", name = "guava", version = "33.4.5-jre")
+  jmh(group = "it.unimi.dsi", name = "fastutil", version = "8.5.15")
   jmh(group = "net.sf.trove4j", name = "trove4j", version = "3.0.3")
   jmh(group = "org.apache.mahout", name = "mahout-math", version = "0.13.0")
 }
