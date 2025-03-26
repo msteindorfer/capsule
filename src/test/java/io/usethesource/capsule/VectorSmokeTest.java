@@ -55,6 +55,7 @@ public class VectorSmokeTest {
   }
 
   @Test
+  // NOTE: msteindorfer: with a separate tail, the indices are off by 32 for triggering new level shifts
   public void testPushBackAndGet() {
     final int MIN_INDEX = 0;
     final int MAX_INDEX = 1048576; // 1024
@@ -73,6 +74,26 @@ public class VectorSmokeTest {
     for (int i = 0; i < input.length; i++) {
       assertEquals(Integer.valueOf(input[i]), vector.get(i));
     }
+  }
+
+  @Test
+  public void testUpdateAcrossTreeTailBoundary() {
+    io.usethesource.capsule.Vector.Immutable<Integer> vector = PersistentTrieVector.of();
+
+    for (int item = 0; item < 33; item++) {
+      vector = vector.pushBack(item);
+    }
+
+    final io.usethesource.capsule.Vector.Immutable<Integer> updatedTree = vector.update(0, -1);
+    assertEquals(Integer.valueOf(-1), updatedTree.get(0));
+    assertEquals(Integer.valueOf(32), updatedTree.get(32));
+
+    final io.usethesource.capsule.Vector.Immutable<Integer> updatedTail = vector.update(32, -2);
+    assertEquals(Integer.valueOf(0), updatedTail.get(0));
+    assertEquals(Integer.valueOf(-2), updatedTail.get(32));
+
+    assertEquals(Integer.valueOf(0), vector.get(0));
+    assertEquals(Integer.valueOf(32), vector.get(32));
   }
 
   @Ignore

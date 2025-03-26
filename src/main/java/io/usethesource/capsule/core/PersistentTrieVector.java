@@ -22,18 +22,19 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   private static final VectorNode EMPTY_NODE = new ContentVectorNode<>(new Object[]{});
 
   private static final PersistentTrieVector EMPTY_VECTOR =
-          new PersistentTrieVector(EMPTY_NODE, 0, 0);
+          new PersistentTrieVector(EMPTY_NODE, 0, 0, new Object[]{});
 
   private final VectorNode<K> root;
   private final int shift;
   private final int length;
   // private final Object[] head;
-  // private final Object[] tail;
+  private final Object[] tail;
 
-  PersistentTrieVector(VectorNode<K> root, int shift, int length) {
+  PersistentTrieVector(VectorNode<K> root, int shift, int length, Object[] tail) {
     this.root = root;
     this.shift = shift;
     this.length = length;
+    this.tail = tail;
   }
 
   public static <K> Vector.Immutable<K> of() {
@@ -41,8 +42,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   }
 
   public static <K> Vector.Immutable<K> of(K item) {
-    final VectorNode<K> newRootNode = new ContentVectorNode<>(new Object[]{item});
-    return new PersistentTrieVector<>(newRootNode, 0, 1);
+    final Object[] newTail = new Object[]{item};
+    return new PersistentTrieVector<>(EMPTY_NODE, 0, 1, newTail);
   }
 
   @Override
@@ -64,6 +65,16 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   @Override
   public K get(int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexOutOfBoundsException(
+              String.format("Index %d out of interval [0,%d)", index, length));
+    }
+
+    if (index >= blockOffset(length)) {
+      int blockRelativeIndex = index - blockOffset(length);
+      return (K) tail[blockRelativeIndex];
+    }
+
     return root.get(index, shift).get();
   }
 
@@ -134,11 +145,6 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     }
   }
 
-  @SuppressWarnings("unused")
-  private static int blockRelativeIndex(final int index) {
-    return index - blockOffset(index);
-  }
-
   private static int minimumShift(final int index) {
     int bitWidth = BIT_COUNT_OF_INDEX - Integer.numberOfLeadingZeros(index);
 
@@ -177,8 +183,17 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
               String.format("Index %d out of interval [0,%d)", index, length));
     }
 
+    final int tailOffset = blockOffset(length);
+
+    if (index >= tailOffset) {
+      int blockRelativeIndex = index - tailOffset;
+      final Object[] newTail = copyAndSet(Object[]::new, tail, blockRelativeIndex, item);
+
+      return new PersistentTrieVector<>(root, shift, length, newTail);
+    }
+
     final VectorNode<K> newRootNode = root.update(index, item, shift);
-    return new PersistentTrieVector<>(newRootNode, shift, length);
+    return new PersistentTrieVector<>(newRootNode, shift, length, tail);
   }
 
   @Override
@@ -265,21 +280,35 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
   @Override
   public Vector.Immutable<K> pushBack(K item) {
+    final int lengthM = length - tail.length;
+    final int lengthR = tail.length;
+
+    if (lengthR < BIT_COUNT_OF_INDEX) {
+      final int newLength = length + 1;
+      final Object[] newTail = copyAndInsert(Object[]::new, tail, tail.length, item);
+
+      return new PersistentTrieVector<>(root, shift, newLength, newTail);
+    }
+
     final int newLength = length + 1;
-    final int newShift = minimumShift(length);
+    final int newShift = minimumShift(lengthM);
 
     if (newShift > shift) {
-      final VectorNode<K> newLeafNode = new ContentVectorNode<>(new Object[]{item});
+      final VectorNode<K> newLeafNode = new ContentVectorNode<>(tail);
       final VectorNode<K> newRootNode = new RegularVectorNode<>(new VectorNode[]{
               root,
               newPath(newLeafNode, shift)
       });
 
-      return new PersistentTrieVector<>(newRootNode, newShift, newLength);
+      final Object[] newTail = new Object[]{item};
+      return new PersistentTrieVector<>(newRootNode, newShift, newLength, newTail);
     }
 
-    final VectorNode<K> newRootNode = root.pushBack(length, item, shift);
-    return new PersistentTrieVector<>(newRootNode, shift, newLength);
+    final ContentVectorNode<K> newLeafNode = new ContentVectorNode<>(tail);
+    final VectorNode<K> newRootNode = pushTail(root, lengthM, newLeafNode, newShift);
+
+    final Object[] newTail = new Object[]{item};
+    return new PersistentTrieVector<>(newRootNode, newShift, newLength, newTail);
   }
 
   private static <K> VectorNode<K> newPath(VectorNode<K> node, int level) {
@@ -290,6 +319,57 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
               newPath(node, level - BIT_PARTITION_SIZE)
       };
       return new RegularVectorNode<>(content);
+    }
+  }
+
+  // NOTE: msteindorfer: this replaces `pushBack` on the nodes, as only full tails get placed in the tree
+  // NOTE: msteindorfer: pattern match switch could be used with JDK 21+
+  static <K> VectorNode<K> pushTail(VectorNode<K> _that, int index, ContentVectorNode<K> newTailNode, int shift) {
+    if (_that instanceof ContentVectorNode) {
+      ContentVectorNode<K> that = (ContentVectorNode<K>) _that;
+
+      assert shift == 0;
+      assert that == EMPTY_NODE;
+
+      return newTailNode;
+    } else {
+      RegularVectorNode<K> that = (RegularVectorNode<K>) _that;
+
+      assert shift >= BIT_PARTITION_SIZE;
+
+      final int blockRelativeIndex = (index >>> shift) & 0b11111;
+      final int idx = blockRelativeIndex;
+
+      if (shift > BIT_PARTITION_SIZE && blockRelativeIndex < that.content.length) {
+        assert blockRelativeIndex < that.content.length;
+
+        // copy and set node
+        final VectorNode[] src = that.content;
+
+        final VectorNode<K> newNode = pushTail((RegularVectorNode<K>) src[idx], index, newTailNode, shift - BIT_PARTITION_SIZE);
+
+        final VectorNode[] dst = copyAndSet(VectorNode[]::new, src, idx, newNode);
+
+        return new RegularVectorNode<>(dst);
+      } else if (shift > BIT_PARTITION_SIZE && blockRelativeIndex == that.content.length) {
+        assert blockRelativeIndex == that.content.length;
+
+        final VectorNode<K> newPathNode = newPath(newTailNode, shift - BIT_PARTITION_SIZE);
+
+        // copy and insert path node
+        final VectorNode[] src = that.content;
+        final VectorNode[] dst = copyAndInsert(VectorNode[]::new, src, idx, newPathNode);
+
+        return new RegularVectorNode<>(dst);
+      } else {
+        assert blockRelativeIndex == that.content.length;
+
+        // copy and insert tail node
+        final VectorNode[] src = that.content;
+        final VectorNode[] dst = copyAndInsert(VectorNode[]::new, src, idx, newTailNode);
+
+        return new RegularVectorNode<>(dst);
+      }
     }
   }
 
@@ -323,6 +403,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     private final VectorNode[] content;
 
     private RegularVectorNode(VectorNode[] content) {
+      assert content.length <= BIT_COUNT_OF_INDEX;
       this.content = content;
     }
 
@@ -386,6 +467,7 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     private final Object[] content;
 
     private ContentVectorNode(Object[] content) {
+      assert content.length <= BIT_COUNT_OF_INDEX;
       this.content = content;
     }
 

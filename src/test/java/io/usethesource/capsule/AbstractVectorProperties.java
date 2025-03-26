@@ -33,10 +33,29 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
   private final int MORE_TRIALS = 10_000;
 
   private final int MAX_SIZE = 50_000; // selected to be larger than three trie levels (i.e., 32 * 32 * 32)
+  private static final int BRANCHING_FACTOR = 32;
   private final Class<?> type;
 
   public AbstractVectorProperties(Class<?> type) {
     this.type = type;
+  }
+
+  private static int tailOffset(final int length) {
+    if (length < BRANCHING_FACTOR) {
+      return 0;
+    } else {
+      return ((length - 1) / BRANCHING_FACTOR) * BRANCHING_FACTOR;
+    }
+  }
+
+  private static <T> ArrayList<T> asArrayList(final Vector.Immutable<T> vector) {
+    final ArrayList<T> list = new ArrayList<>(vector.size());
+
+    for (T item : vector) {
+      list.add(item);
+    }
+
+    return list;
   }
 
   @Ignore
@@ -262,5 +281,32 @@ public abstract class AbstractVectorProperties<T, CT extends Vector.Immutable<T>
         });
 
     assertTrue("Elements must be equal, except at the updated cell.", unmodifiedItemsEqual);
+  }
+
+  @Property(trials = LESS_TRIALS)
+  public void updateAcrossTreeTailBoundary(@Size(min = BRANCHING_FACTOR + 1, max = MAX_SIZE) final CT vector,
+      final int seed, final T updatedTreeItem, final T updatedTailItem) {
+
+    final int lengthM = tailOffset(vector.size());
+    final int lengthR = vector.size() - lengthM;
+
+    assertTrue("Property requires at least one tree element.", lengthM > 0);
+    assertTrue("Property requires at least one tail element.", lengthR > 0);
+
+    final Random random = new Random(seed);
+    final int treeIndex = random.nextInt(lengthM);
+    final int tailIndex = lengthM + random.nextInt(lengthR);
+
+    final ArrayList<T> expectedTreeUpdate = asArrayList(vector);
+    expectedTreeUpdate.set(treeIndex, updatedTreeItem);
+
+    final CT treeUpdate = (CT) vector.update(treeIndex, updatedTreeItem);
+    assertEquals(expectedTreeUpdate, treeUpdate);
+
+    final ArrayList<T> expectedTailUpdate = asArrayList(vector);
+    expectedTailUpdate.set(tailIndex, updatedTailItem);
+
+    final CT tailUpdate = (CT) vector.update(tailIndex, updatedTailItem);
+    assertEquals(expectedTailUpdate, tailUpdate);
   }
 }
