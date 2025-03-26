@@ -55,6 +55,7 @@ public class VectorSmokeTest {
   }
 
   @Test
+  // NOTE: msteindorfer: with a separate tail, the indices are off by 32 for triggering new level shifts
   public void testPushBackAndGet() {
     final int MIN_INDEX = 0;
     final int MAX_INDEX = 1048576; // 1024
