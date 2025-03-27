@@ -22,20 +22,18 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   private static final VectorNode EMPTY_NODE = new ContentVectorNode<>(new Object[]{});
 
   private static final PersistentTrieVector EMPTY_VECTOR =
-          new PersistentTrieVector(EMPTY_NODE, 0, 0, new Object[]{}, new Object[]{});
+          new PersistentTrieVector(EMPTY_NODE, 0, 0, new Object[]{});
 
   private final VectorNode<K> root;
   private final int shift;
   private final int length;
-  private final Object[] head;
+  // private final Object[] head;
   private final Object[] tail;
 
-  PersistentTrieVector(VectorNode<K> root, int shift, int length, Object[] head, Object[] tail) {
+  PersistentTrieVector(VectorNode<K> root, int shift, int length, Object[] tail) {
     this.root = root;
     this.shift = shift;
     this.length = length;
-
-    this.head = head;
     this.tail = tail;
   }
 
@@ -44,9 +42,8 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
   }
 
   public static <K> Vector.Immutable<K> of(K item) {
-    final Object[] newHead = new Object[]{};
     final Object[] newTail = new Object[]{item};
-    return new PersistentTrieVector<>(EMPTY_NODE, 0,1, newHead, newTail);
+    return new PersistentTrieVector<>(EMPTY_NODE, 0, 1, newTail);
   }
 
   @Override
@@ -73,22 +70,12 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
               String.format("Index %d out of interval [0,%d)", index, length));
     }
 
-    // NOTE: msteindorfer: it is handy to view the tree and tail as separate entities
-    var lengthL = head.length;
-    var lengthM = length - head.length - tail.length;
-    var lengthR = tail.length;
-
-    if (index < lengthL) {
-      int blockRelativeIndex = index;
-      return (K) head[blockRelativeIndex];
-    }
-
-    if (index >= lengthL + lengthM) {
-      int blockRelativeIndex = index - lengthL - lengthM;
+    if (index >= blockOffset(length)) {
+      int blockRelativeIndex = index - blockOffset(length);
       return (K) tail[blockRelativeIndex];
     }
 
-    return root.get(index - lengthL, shift).get();
+    return root.get(index, shift).get();
   }
 
   @Override
@@ -201,18 +188,16 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
               String.format("Index %d out of interval [0,%d)", index, length));
     }
 
-    // TODO: msteindorfer: Update in head?
-
     // Update in tail?
     if ((length - blockOffset(length)) < BIT_COUNT_OF_INDEX) {
       int blockRelativeIndex = blockRelativeIndex(index);
       final Object[] newTail = copyAndSet(Object[]::new, tail, blockRelativeIndex, item);
 
-      return new PersistentTrieVector<>(root, shift, length, head, newTail);
+      return new PersistentTrieVector<>(root, shift, length, newTail);
     }
 
     final VectorNode<K> newRootNode = root.update(index, item, shift);
-    return new PersistentTrieVector<>(newRootNode, shift, length, head, tail);
+    return new PersistentTrieVector<>(newRootNode, shift, length, tail);
   }
 
   @Override
@@ -286,57 +271,29 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
     return tmp;
   }
 
-  // TODO: msteindorfer: won't work as first node is irregular and not full (leaves gap to the right)
-  // NOTE: msteindorfer: at least size of first irregular node, or offset to regular left-aligned part, needs to be known
   public Vector.Immutable<K> pushFront(K item) {
-    // NOTE: msteindorfer: it is handy to view the tree and tail as separate entities
-    var lengthL = head.length;
-    var lengthM = length - head.length - tail.length;
-    var lengthR = tail.length;
+    // TODO: optimize placeholder snippet
+    Vector.Immutable<K> tmp = Vector.Immutable.of(item);
 
-    // Push front in head?
-    if (lengthL < BIT_COUNT_OF_INDEX) {
-      final int newLength = length + 1;
-      final Object[] newHead = copyAndInsert(Object[]::new, head, 0, item);
-
-      return new PersistentTrieVector<>(root, shift, newLength, newHead, tail);
+    for (K _item : this) {
+      tmp = tmp.pushBack(_item);
     }
 
-    final int newLength = length + 1;
-    final int newShift = minimumShift(lengthM);
-
-    // NOTE: msteindorfer: overflow logic could be moved into `pushFront`
-    if (newShift > shift) {
-      final VectorNode<K> newLeafNode = new ContentVectorNode<>(head);
-      final VectorNode<K> newRootNode = new RegularVectorNode<>(new VectorNode[]{
-              newPath(newLeafNode, shift),
-              root
-      });
-
-      final Object[] newHead = new Object[]{item};
-      return new PersistentTrieVector<>(newRootNode, newShift, newLength, newHead, tail);
-    }
-
-    final ContentVectorNode<K> newLeafNode = new ContentVectorNode<>(head);
-    final VectorNode<K> newRootNode = pushTail(root, 0 /*0*/ /*lengthM*/ /*???*/, newLeafNode, newShift /*shift*/);
-
-    final Object[] newHead = new Object[]{item};
-    return new PersistentTrieVector<>(newRootNode, newShift /*shift*/, newLength, newHead, tail);
+    return tmp;
   }
 
   @Override
   public Vector.Immutable<K> pushBack(K item) {
     // NOTE: msteindorfer: it is handy to view the tree and tail as separate entities
-    var lengthL = head.length;
-    var lengthM = length - head.length - tail.length;
+    var lengthM = length - tail.length;
     var lengthR = tail.length;
 
     // Push back in tail?
-    if (lengthR < BIT_COUNT_OF_INDEX) {
+    if ((length - blockOffset(length)) < BIT_COUNT_OF_INDEX) {
       final int newLength = length + 1;
       final Object[] newTail = copyAndInsert(Object[]::new, tail, tail.length, item);
 
-      return new PersistentTrieVector<>(root, shift, newLength, head, newTail);
+      return new PersistentTrieVector<>(root, shift, newLength, newTail);
     }
 
 //    // NOTE: msteindorfer: special casing logic was moved into `pushTail`
@@ -361,14 +318,14 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
       });
 
       final Object[] newTail = new Object[]{item};
-      return new PersistentTrieVector<>(newRootNode, newShift, newLength, head, newTail);
+      return new PersistentTrieVector<>(newRootNode, newShift, newLength, newTail);
     }
 
     final ContentVectorNode<K> newLeafNode = new ContentVectorNode<>(tail);
     final VectorNode<K> newRootNode = pushTail(root, lengthM, newLeafNode, newShift /*shift*/);
 
     final Object[] newTail = new Object[]{item};
-    return new PersistentTrieVector<>(newRootNode, newShift /*shift*/, newLength, head, newTail);
+    return new PersistentTrieVector<>(newRootNode, newShift /*shift*/, newLength, newTail);
   }
 
   private static <K> VectorNode<K> newPath(VectorNode<K> node, int level) {
@@ -419,11 +376,11 @@ public class PersistentTrieVector<K> implements Vector.Immutable<K>, java.util.L
 
         // copy and insert path node
         final VectorNode[] src = that.content;
-        final VectorNode[] dst = copyAndInsert(VectorNode[]::new, src, idx /*0*/ /*idx*/, newPathNode);
+        final VectorNode[] dst = copyAndInsert(VectorNode[]::new, src, idx, newPathNode);
 
         return new RegularVectorNode<>(dst);
       } else {
-        assert blockRelativeIndex == 0 || blockRelativeIndex == that.content.length;
+        assert blockRelativeIndex == that.content.length;
 
         // copy and insert tail node
         final VectorNode[] src = that.content;
