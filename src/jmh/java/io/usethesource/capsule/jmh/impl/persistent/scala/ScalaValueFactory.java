@@ -7,6 +7,7 @@
  */
 package io.usethesource.capsule.jmh.impl.persistent.scala;
 
+import io.usethesource.capsule.jmh.api.JmhList;
 import io.usethesource.capsule.jmh.api.JmhMap;
 import io.usethesource.capsule.jmh.api.JmhSet;
 import io.usethesource.capsule.jmh.api.JmhSetMultimap;
@@ -30,8 +31,12 @@ public class ScalaValueFactory implements JmhValueFactory {
   }
 
   @Override
+  public JmhList.Builder listBuilder() {
+    return new ScalaListWriter();
+  }
+
+  @Override
   public String toString() {
     return "VF_SCALA";
   }
-
 }

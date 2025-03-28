@@ -36,4 +36,7 @@ public interface JmhValueFactory {
     throw FACTORY_NOT_YET_IMPLEMENTED_EXCEPTION;
   }
 
+  default JmhList.Builder listBuilder() {
+    throw FACTORY_NOT_YET_IMPLEMENTED_EXCEPTION;
+  }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Michael Steindorfer <Centrum Wiskunde & Informatica> and Contributors.
  * All rights reserved.
  *
@@ -7,6 +7,7 @@
  */
 package io.usethesource.capsule.jmh.impl.persistent.bifurcan;
 
+import io.usethesource.capsule.jmh.api.JmhList;
 import io.usethesource.capsule.jmh.api.JmhMap;
 import io.usethesource.capsule.jmh.api.JmhSet;
 import io.usethesource.capsule.jmh.api.JmhValueFactory;
@@ -24,8 +25,12 @@ public class BifurcanValueFactory implements JmhValueFactory {
   }
 
   @Override
+  public JmhList.Builder listBuilder() {
+    return new BifurcanListBuilder();
+  }
+
+  @Override
   public String toString() {
     return "VF_BIFURCAN";
   }
-
 }

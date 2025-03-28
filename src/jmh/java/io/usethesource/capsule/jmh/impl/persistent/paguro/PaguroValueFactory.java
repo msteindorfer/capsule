@@ -7,6 +7,7 @@
  */
 package io.usethesource.capsule.jmh.impl.persistent.paguro;
 
+import io.usethesource.capsule.jmh.api.JmhList;
 import io.usethesource.capsule.jmh.api.JmhMap;
 import io.usethesource.capsule.jmh.api.JmhSet;
 import io.usethesource.capsule.jmh.api.JmhValueFactory;
@@ -24,8 +25,12 @@ public class PaguroValueFactory implements JmhValueFactory {
   }
 
   @Override
+  public JmhList.Builder listBuilder() {
+    return new PaguroListBuilder();
+  }
+
+  @Override
   public String toString() {
     return "VF_PAGURO";
   }
-
 }

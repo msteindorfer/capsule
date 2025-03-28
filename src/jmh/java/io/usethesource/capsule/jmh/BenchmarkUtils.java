@@ -89,7 +89,7 @@ public class BenchmarkUtils {
   }
 
   public enum DataType {
-    MAP, SET_MULTIMAP, SET
+    MAP, SET_MULTIMAP, SET, LIST
   }
 
   public enum Archetype {

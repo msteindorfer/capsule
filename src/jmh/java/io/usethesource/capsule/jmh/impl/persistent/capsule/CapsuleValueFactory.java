@@ -7,6 +7,7 @@
  */
 package io.usethesource.capsule.jmh.impl.persistent.capsule;
 
+import io.usethesource.capsule.jmh.api.JmhList;
 import io.usethesource.capsule.jmh.api.JmhMap;
 import io.usethesource.capsule.jmh.api.JmhSet;
 import io.usethesource.capsule.jmh.api.JmhSetMultimap;
@@ -32,14 +33,18 @@ public class CapsuleValueFactory implements JmhValueFactory {
 
   @Override
   public JmhSetMultimap.Builder setMultimapBuilder() {
-    return useBinaryRelation ?
-            new CapsuleBidirectionalSetMultimapBuilder() :
-            new CapsuleSetMultimapBuilder();
+    return useBinaryRelation
+        ? new CapsuleBidirectionalSetMultimapBuilder()
+        : new CapsuleSetMultimapBuilder();
+  }
+
+  @Override
+  public JmhList.Builder listBuilder() {
+    return new CapsuleListBuilder();
   }
 
   @Override
   public String toString() {
     return "VF_CAPSULE";
   }
-
 }

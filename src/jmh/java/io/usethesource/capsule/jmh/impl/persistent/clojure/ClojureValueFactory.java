@@ -7,6 +7,7 @@
  */
 package io.usethesource.capsule.jmh.impl.persistent.clojure;
 
+import io.usethesource.capsule.jmh.api.JmhList;
 import io.usethesource.capsule.jmh.api.JmhMap;
 import io.usethesource.capsule.jmh.api.JmhSet;
 import io.usethesource.capsule.jmh.api.JmhSetMultimap;
@@ -30,8 +31,12 @@ public class ClojureValueFactory implements JmhValueFactory {
   }
 
   @Override
+  public JmhList.Builder listBuilder() {
+    return new ClojureListWriter();
+  }
+
+  @Override
   public String toString() {
     return "VF_CLOJURE";
   }
-
 }
