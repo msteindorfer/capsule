@@ -1,7 +1,7 @@
 plugins {
   `java-library`
   `maven-publish`
-  id("me.champeau.jmh") version "0.7.1"
+  id("me.champeau.jmh") version "0.7.3"
 }
 
 version = version.let { conformVersionToMavenConvention("${it}") }
